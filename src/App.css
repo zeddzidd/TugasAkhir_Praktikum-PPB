@@ -1172,19 +1172,42 @@ button.support-action-item:hover {
 /* ==========================================================================
    Global Modal Overlay & Dialog Styles (AuthModal, CRUD Modals, Edit Profile)
    ========================================================================== */
+@keyframes smoothOverlayFade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes smoothModalEntrance {
+  0% {
+    opacity: 0;
+    transform: scale(0.93) translateY(22px);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
   overflow-y: auto;
-  animation: kaFadeIn 0.18s ease-out;
+  animation: smoothOverlayFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .modal-content {
@@ -1197,7 +1220,8 @@ button.support-action-item:hover {
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
   position: relative;
   z-index: 1001;
-  animation: kaModalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+  animation: smoothModalEntrance 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .modal-header {
@@ -1251,7 +1275,8 @@ button.support-action-item:hover {
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.28);
   position: relative;
   z-index: 1001;
-  animation: kaModalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+  animation: smoothModalEntrance 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .auth-modal-header {
@@ -1360,6 +1385,7 @@ button.support-action-item:hover {
   justify-content: center;
   padding: 20px;
   overflow-y: auto;
+  animation: smoothOverlayFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .ka-modal-window {
@@ -1373,18 +1399,8 @@ button.support-action-item:hover {
   overflow: hidden;
   box-shadow: 0 25px 65px rgba(0, 0, 0, 0.3);
   position: relative;
-  animation: kaModalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes kaModalPop {
-  from {
-    opacity: 0;
-    transform: scale(0.97) translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+  will-change: transform, opacity;
+  animation: smoothModalEntrance 0.36s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Modal Top Bar: Breadcrumbs & Close Button */
@@ -1466,10 +1482,10 @@ button.support-action-item:hover {
   font-weight: 600;
   z-index: 50;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
-  animation: kaFadeIn 0.2s ease;
+  animation: kaToastFadeIn 0.2s ease;
 }
 
-@keyframes kaFadeIn {
+@keyframes kaToastFadeIn {
   from {
     opacity: 0;
     transform: translate(-50%, -6px);
@@ -2200,12 +2216,14 @@ button.support-action-item:hover {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   z-index: 1100;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  animation: smoothOverlayFade 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .ka-sub-modal-window {
@@ -2216,7 +2234,8 @@ button.support-action-item:hover {
   max-height: 85vh;
   overflow-y: auto;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
-  animation: kaModalPop 0.2s ease;
+  will-change: transform, opacity;
+  animation: smoothModalEntrance 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .ka-sub-modal-header {
