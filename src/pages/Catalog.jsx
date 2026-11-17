@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import ShoeCard from '../components/ShoeCard.jsx'
 import ShoeModal from '../components/ShoeModal.jsx'
 import { CATEGORIES } from '../data/shoes.js'
@@ -15,6 +15,7 @@ function Catalog({
   const [sortBy, setSortBy] = useState('default')
   const [activeShoe, setActiveShoe] = useState(null)
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
 
   // Featured shoes for the hero carousel (6 slides)
   const carouselShoes = useMemo(() => {
@@ -23,10 +24,9 @@ function Catalog({
     return shoes.slice(0, 6)
   }, [shoes])
 
-  // Auto-advance carousel every 5s if not hovered
-  const [isPaused, setIsPaused] = useState(false)
+  // Auto-advance carousel every 6s
   useEffect(() => {
-    if (isPaused || carouselShoes.length === 0) return
+    if (isPaused || carouselShoes.length <= 1) return
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselShoes.length)
     }, 6000)
@@ -34,13 +34,58 @@ function Catalog({
   }, [isPaused, carouselShoes.length])
 
   const handlePrevSlide = (e) => {
-    e.stopPropagation()
+    if (e) e.stopPropagation()
     setCurrentSlide((prev) => (prev === 0 ? carouselShoes.length - 1 : prev - 1))
   }
 
   const handleNextSlide = (e) => {
-    e.stopPropagation()
+    if (e) e.stopPropagation()
     setCurrentSlide((prev) => (prev + 1) % carouselShoes.length)
+  }
+
+  // Touch and Mouse Swipe / Drag Handlers
+  const touchStartXRef = useRef(null)
+  const touchEndXRef = useRef(null)
+  const isDraggingRef = useRef(false)
+
+  const handleTouchStart = (e) => {
+    touchStartXRef.current = e.touches[0].clientX
+  }
+
+  const handleTouchMove = (e) => {
+    touchEndXRef.current = e.touches[0].clientX
+  }
+
+  const handleTouchEnd = () => {
+    if (touchStartXRef.current !== null && touchEndXRef.current !== null) {
+      const diff = touchStartXRef.current - touchEndXRef.current
+      if (diff > 45) {
+        // Swiped Left -> Next Slide
+        handleNextSlide()
+      } else if (diff < -45) {
+        // Swiped Right -> Previous Slide
+        handlePrevSlide()
+      }
+    }
+    touchStartXRef.current = null
+    touchEndXRef.current = null
+  }
+
+  const handleMouseDown = (e) => {
+    touchStartXRef.current = e.clientX
+    isDraggingRef.current = true
+  }
+
+  const handleMouseMove = (e) => {
+    if (!isDraggingRef.current) return
+    touchEndXRef.current = e.clientX
+  }
+
+  const handleMouseUp = () => {
+    if (isDraggingRef.current) {
+      handleTouchEnd()
+    }
+    isDraggingRef.current = false
   }
 
   // Filter shoes based on search, category, and sub-nav (e.g. Express Shipping)
@@ -65,7 +110,13 @@ function Catalog({
           selectedSubNav !== 'redemption' &&
           selectedSubNav !== 'express'
         ) {
-          if (shoe.category !== selectedSubNav && selectedSubNav !== 'Electronics' && selectedSubNav !== 'Watches' && selectedSubNav !== 'Trading Cards' && selectedSubNav !== 'K-Brands') {
+          if (
+            shoe.category !== selectedSubNav &&
+            selectedSubNav !== 'Electronics' &&
+            selectedSubNav !== 'Watches' &&
+            selectedSubNav !== 'Trading Cards' &&
+            selectedSubNav !== 'K-Brands'
+          ) {
             return false
           }
         }
@@ -90,78 +141,112 @@ function Catalog({
 
   return (
     <div className="catalog-page-container">
-      {/* Hero Banner Carousel (Exact match to Kick Avenue UI) */}
-      {currentHeroShoe && (
+      {/* Hero Banner Carousel (Exact match to Kick Avenue UI with Sliding Transition & Nav Chevrons) */}
+      {carouselShoes.length > 0 && (
         <section
           className="hero-carousel-wrap"
           onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-          onClick={() => setActiveShoe(currentHeroShoe)}
-          title={`Lihat detail ${currentHeroShoe.name}`}
+          onMouseLeave={() => {
+            setIsPaused(false)
+            isDraggingRef.current = false
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          title="Geser atau klik panah untuk melihat koleksi lainnya"
         >
-          <div className="hero-carousel-inner">
-            {/* Main Featured Shoe Floating Image */}
-            <div className="hero-shoe-center">
+          {/* Left Navigation Chevron Button (Thin Chevron matching screenshot) */}
+          <button
+            type="button"
+            className="carousel-chevron-btn chevron-left"
+            onClick={handlePrevSlide}
+            aria-label="Slide sebelumnya"
+            title="Sebelumnya"
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+
+          {/* Right Navigation Chevron Button (Thin Chevron matching screenshot) */}
+          <button
+            type="button"
+            className="carousel-chevron-btn chevron-right"
+            onClick={handleNextSlide}
+            aria-label="Slide berikutnya"
+            title="Berikutnya"
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+
+          {/* Sliding Track for smooth slide animation */}
+          <div
+            className="carousel-sliding-track"
+            style={{
+              transform: `translateX(-${currentSlide * 100}%)`,
+            }}
+          >
+            {carouselShoes.map((shoe) => (
+              <div
+                key={shoe.id}
+                className="carousel-slide-item"
+                onClick={() => setActiveShoe(shoe)}
+              >
+                {/* Floating Centered Shoe */}
+                <div className="hero-shoe-center">
+                  <img
+                    src={shoe.image}
+                    alt={shoe.name}
+                    className="hero-shoe-image"
+                    draggable={false}
+                    onError={(e) => {
+                      e.target.onerror = null
+                      e.target.src = '/shoes/dunk-low.svg'
+                    }}
+                  />
+                </div>
+
+                {/* Bottom-Left Information: Product Name & Colorway */}
+                <div className="hero-shoe-info">
+                  <h2 className="hero-shoe-title">{shoe.name.toUpperCase()}</h2>
+                  <p className="hero-shoe-subtitle">
+                    {shoe.colorway || shoe.brand.toUpperCase()}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Next Shoe Peeking on the Right (Tilted upwards dynamically matching screenshot) */}
+          {nextHeroShoe && (
+            <div
+              className="hero-next-peek-tilted"
+              onClick={handleNextSlide}
+              title={`Berikutnya: ${nextHeroShoe.name}`}
+            >
               <img
-                src={currentHeroShoe.image}
-                alt={currentHeroShoe.name}
-                className="hero-shoe-image"
+                src={nextHeroShoe.image}
+                alt={nextHeroShoe.name}
+                className="hero-next-tilted-img"
+                draggable={false}
                 onError={(e) => {
                   e.target.onerror = null
                   e.target.src = '/shoes/dunk-low.svg'
                 }}
               />
             </div>
+          )}
 
-            {/* Next Shoe Peeking On The Right (Kick Avenue Signature) */}
-            {nextHeroShoe && (
-              <div
-                className="hero-next-peek"
-                onClick={handleNextSlide}
-                title={`Berikutnya: ${nextHeroShoe.name}`}
-              >
-                <img
-                  src={nextHeroShoe.image}
-                  alt={nextHeroShoe.name}
-                  className="hero-next-image"
-                  onError={(e) => {
-                    e.target.onerror = null
-                    e.target.src = '/shoes/dunk-low.svg'
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Bottom-Left Information: Product Name & Colorway */}
-            <div className="hero-shoe-info">
-              <h2 className="hero-shoe-title">{currentHeroShoe.name.toUpperCase()}</h2>
-              <p className="hero-shoe-subtitle">
-                {currentHeroShoe.colorway || currentHeroShoe.brand.toUpperCase()}
-              </p>
-            </div>
-
-            {/* Bottom-Right Controls: Slide Counter (e.g., 2/6) & Navigation */}
-            <div className="hero-counter-badge" onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                className="hero-arrow-btn"
-                onClick={handlePrevSlide}
-                title="Sebelumnya"
-              >
-                &#8249;
-              </button>
-              <span className="hero-counter-text">
-                {currentSlide + 1}/{carouselShoes.length}
-              </span>
-              <button
-                type="button"
-                className="hero-arrow-btn"
-                onClick={handleNextSlide}
-                title="Berikutnya"
-              >
-                &#8250;
-              </button>
-            </div>
+          {/* Bottom-Right Counter Badge: "2/6" matching screenshot */}
+          <div className="hero-counter-badge-simple" onClick={(e) => e.stopPropagation()}>
+            <span className="hero-counter-text">
+              {currentSlide + 1}/{carouselShoes.length}
+            </span>
           </div>
         </section>
       )}

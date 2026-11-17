@@ -351,22 +351,45 @@
 }
 
 /* ==========================================================================
-   Hero Banner Carousel (Exact match to Kick Avenue UI)
+   Hero Banner Carousel (Sliding Animation & Chevrons matching Screenshot)
    ========================================================================== */
 .hero-carousel-wrap {
   width: 100%;
+  height: 380px;
   background: #eaebed;
   border-radius: var(--radius-lg);
   position: relative;
   overflow: hidden;
   margin-bottom: 36px;
-  cursor: pointer;
+  cursor: grab;
   user-select: none;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
-.hero-carousel-inner {
-  height: 380px;
+.hero-carousel-wrap:active {
+  cursor: grabbing;
+}
+
+@media (max-width: 640px) {
+  .hero-carousel-wrap {
+    height: 300px;
+  }
+}
+
+/* Sliding Track */
+.carousel-sliding-track {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.carousel-slide-item {
+  min-width: 100%;
+  width: 100%;
+  height: 100%;
+  flex-shrink: 0;
   position: relative;
   display: flex;
   align-items: center;
@@ -374,10 +397,36 @@
   overflow: hidden;
 }
 
-@media (max-width: 640px) {
-  .hero-carousel-inner {
-    height: 300px;
-  }
+/* Left & Right Chevron Buttons (Matching Screenshot) */
+.carousel-chevron-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 25;
+  color: #9ca3af;
+  background: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.carousel-chevron-btn:hover {
+  color: #111827;
+  background: rgba(0, 0, 0, 0.06);
+  transform: translateY(-50%) scale(1.15);
+}
+
+.chevron-left {
+  left: 12px;
+}
+
+.chevron-right {
+  right: 12px;
 }
 
 /* Centered Floating Sneaker */
@@ -392,51 +441,52 @@
   transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.hero-carousel-wrap:hover .hero-shoe-center {
+.carousel-slide-item:hover .hero-shoe-center {
   transform: scale(1.03) translateY(-4px);
 }
 
 .hero-shoe-image {
   width: 100%;
-  max-height: 280px;
+  max-height: 270px;
   object-fit: contain;
   filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.18));
 }
 
 @media (max-width: 640px) {
   .hero-shoe-image {
-    max-height: 200px;
+    max-height: 190px;
   }
 }
 
-/* Next Shoe Peeking on the Right (Kick Avenue Signature) */
-.hero-next-peek {
+/* Next Shoe Peeking on Top-Right Tilted (Exact Match to Screenshot) */
+.hero-next-peek-tilted {
   position: absolute;
-  right: -70px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 260px;
-  opacity: 0.85;
-  z-index: 1;
-  pointer-events: auto;
+  right: -55px;
+  top: -25px;
+  width: 290px;
+  height: 250px;
+  z-index: 15;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transform: rotate(-24deg) scale(1.05);
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  opacity: 0.92;
+  pointer-events: auto;
 }
 
-.hero-next-peek:hover {
+.hero-next-peek-tilted:hover {
+  transform: rotate(-24deg) scale(1.12) translateX(-8px);
   opacity: 1;
-  transform: translateY(-50%) translateX(-10px);
 }
 
-.hero-next-image {
+.hero-next-tilted-img {
   width: 100%;
-  max-height: 220px;
+  height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.12));
+  filter: drop-shadow(0 16px 22px rgba(0, 0, 0, 0.22));
 }
 
 @media (max-width: 768px) {
-  .hero-next-peek {
+  .hero-next-peek-tilted {
     display: none;
   }
 }
@@ -446,7 +496,7 @@
   position: absolute;
   bottom: 24px;
   left: 28px;
-  z-index: 3;
+  z-index: 10;
   pointer-events: none;
 }
 
@@ -471,55 +521,42 @@
     left: 18px;
   }
   .hero-shoe-title {
-    font-size: 16px;
+    font-size: 15px;
   }
   .hero-shoe-subtitle {
     font-size: 12px;
   }
 }
 
-/* Bottom Right Slide Counter Badge (e.g. 2/6) */
-.hero-counter-badge {
+/* Bottom Right Slide Counter Badge: "2/6" pill */
+.hero-counter-badge-simple {
   position: absolute;
-  bottom: 24px;
-  right: 28px;
-  z-index: 5;
-  background: rgba(17, 24, 39, 0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  bottom: 20px;
+  right: 24px;
+  z-index: 20;
+  background: rgba(17, 24, 39, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   color: #ffffff;
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  pointer-events: none;
 }
 
 @media (max-width: 640px) {
-  .hero-counter-badge {
-    bottom: 16px;
-    right: 18px;
+  .hero-counter-badge-simple {
+    bottom: 14px;
+    right: 16px;
   }
 }
 
 .hero-counter-text {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
-  letter-spacing: 0.05em;
-}
-
-.hero-arrow-btn {
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1;
-  padding: 0 4px;
-  opacity: 0.8;
-  transition: opacity 0.15s ease;
-}
-
-.hero-arrow-btn:hover {
-  opacity: 1;
+  letter-spacing: 0.06em;
 }
 
 /* ==========================================================================
