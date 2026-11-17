@@ -28,7 +28,7 @@ function AuthModal({ mode, onClose, onAuthSuccess }) {
           password,
           fullName: name.trim(),
         })
-        setSuccessMsg(`Akun ${name} berhasil didaftarkan di Supabase!`)
+        setSuccessMsg(`Akun ${name} berhasil didaftarkan!`)
       }
 
       if (onAuthSuccess) {
@@ -140,14 +140,14 @@ function AuthModal({ mode, onClose, onAuthSuccess }) {
                 disabled={isSubmitting}
               >
                 {isSubmitting
-                  ? 'Menghubungkan ke Supabase...'
+                  ? 'Memproses...'
                   : isLogin
                   ? 'Masuk ke ZedConsign'
-                  : 'Daftar Akun Baru (Supabase)'}
+                  : 'Daftar Akun Baru'}
               </button>
 
               <p className="auth-disclaimer">
-                Autentikasi terenkripsi &amp; terhubung dengan database Supabase Cloud.
+                Autentikasi terenkripsi aman untuk seluruh transaksi ZedConsign.
               </p>
             </form>
           )}

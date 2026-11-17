@@ -364,7 +364,7 @@ function Profile({ onNavigateManage }) {
             {authMode === 'register' ? 'Buat Akun Member Baru' : 'Masuk ke Akun Anda'}
           </h1>
           <p className="auth-portal-subtitle">
-            Akses katalog konsinyasi autentik, kelola inventaris sepatu titip jual, dan sinkronisasi cloud database Supabase.
+            Akses katalog konsinyasi autentik, kelola inventaris sepatu titip jual, dan nikmati transaksi aman.
           </p>
 
           <div className="auth-mode-tabs">
@@ -464,7 +464,7 @@ function Profile({ onNavigateManage }) {
             {isSubmitting
               ? 'Memproses...'
               : authMode === 'register'
-              ? 'Daftar Akun Baru (Supabase)'
+              ? 'Daftar Akun Baru'
               : 'Masuk ke Akun'}
           </button>
 
