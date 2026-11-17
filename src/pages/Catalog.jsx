@@ -226,26 +226,6 @@ function Catalog({
             ))}
           </div>
 
-          {/* Next Shoe Peeking on the Right (Tilted upwards dynamically matching screenshot) */}
-          {nextHeroShoe && (
-            <div
-              className="hero-next-peek-tilted"
-              onClick={handleNextSlide}
-              title={`Berikutnya: ${nextHeroShoe.name}`}
-            >
-              <img
-                src={nextHeroShoe.image}
-                alt={nextHeroShoe.name}
-                className="hero-next-tilted-img"
-                draggable={false}
-                onError={(e) => {
-                  e.target.onerror = null
-                  e.target.src = '/shoes/dunk-low.svg'
-                }}
-              />
-            </div>
-          )}
-
           {/* Bottom-Right Counter Badge: "2/6" matching screenshot */}
           <div className="hero-counter-badge-simple" onClick={(e) => e.stopPropagation()}>
             <span className="hero-counter-text">
