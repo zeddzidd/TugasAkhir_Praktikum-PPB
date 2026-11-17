@@ -17,8 +17,8 @@ function Catalog({
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
 
-  // All shoes currently in the catalog are displayed in the hero banner carousel
-  const carouselShoes = shoes
+  // Batasi hero banner carousel menjadi 5 slide teratas dari katalog
+  const carouselShoes = useMemo(() => shoes.slice(0, 5), [shoes])
   const safeSlide =
     carouselShoes.length > 0
       ? ((currentSlide % carouselShoes.length) + carouselShoes.length) %
