@@ -185,6 +185,38 @@ function Header({
               </button>
             )}
           </nav>
+
+          {/* Mobile Auth Actions (visible when desktop nav is hidden < 900px) */}
+          <div className="mobile-header-auth-group">
+            {currentUser ? (
+              <div
+                className="header-avatar-circle"
+                onClick={() => onSelectTab('profile')}
+                title="Buka Profil Pengguna"
+              >
+                {initials}
+              </div>
+            ) : (
+              <div className="mobile-auth-pills">
+                <button
+                  type="button"
+                  className="mobile-btn-login-text"
+                  onClick={() => onOpenAuth('login')}
+                  title="Masuk ke Akun"
+                >
+                  Masuk
+                </button>
+                <button
+                  type="button"
+                  className="mobile-btn-register-pill"
+                  onClick={() => onOpenAuth('register')}
+                  title="Daftar Akun Baru"
+                >
+                  Daftar
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Sub-Navigation Strip (Redemption Center, Express Shipping ⚡, Sneakers, etc.) */}

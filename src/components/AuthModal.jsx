@@ -1,14 +1,30 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { signUpUser, signInUser } from '../lib/supabase.js'
 
 function AuthModal({ mode, onClose, onAuthSuccess }) {
-  const [isLogin, setIsLogin] = useState(mode === 'login')
+  const [isLogin, setIsLogin] = useState(mode !== 'register')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Sync mode whenever opened or changed
+  useEffect(() => {
+    setIsLogin(mode !== 'register')
+    setErrorMsg('')
+    setSuccessMsg('')
+  }, [mode])
+
+  // Escape key listener to close modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -18,13 +34,13 @@ function AuthModal({ mode, onClose, onAuthSuccess }) {
     try {
       let session
       if (isLogin) {
-        session = await signInUser({ email, password })
+        session = await signInUser({ email: email.trim(), password })
         setSuccessMsg(`Selamat datang kembali di ZedConsign!`)
       } else {
         if (!name.trim()) throw new Error('Mohon isi nama lengkap Anda.')
         if (password.length < 6) throw new Error('Kata sandi minimal 6 karakter.')
         session = await signUpUser({
-          email,
+          email: email.trim(),
           password,
           fullName: name.trim(),
         })
@@ -37,9 +53,35 @@ function AuthModal({ mode, onClose, onAuthSuccess }) {
 
       setTimeout(() => {
         onClose()
-      }, 1200)
+      }, 1000)
     } catch (err) {
       setErrorMsg(err.message || 'Terjadi kesalahan autentikasi.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Quick Demo Login (for instant testing without typing)
+  const handleQuickDemo = async () => {
+    setErrorMsg('')
+    setIsSubmitting(true)
+    try {
+      const session = await signUpUser({
+        email: 'shiddiqyazidn29@gmail.com',
+        password: 'password123',
+        fullName: 'Shiddiq Yazid Nurhakim',
+        phone: '081234567890',
+      }).catch(async () => {
+        return await signInUser({
+          email: 'shiddiqyazidn29@gmail.com',
+          password: 'password123',
+        })
+      })
+      setSuccessMsg(`Berhasil masuk sebagai Shiddiq Yazid Nurhakim!`)
+      if (onAuthSuccess) onAuthSuccess(session)
+      setTimeout(() => onClose(), 900)
+    } catch (err) {
+      setErrorMsg(err.message || 'Gagal masuk demo.')
     } finally {
       setIsSubmitting(false)
     }
@@ -49,8 +91,16 @@ function AuthModal({ mode, onClose, onAuthSuccess }) {
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div className="auth-modal-card" onClick={(e) => e.stopPropagation()}>
         <div className="auth-modal-header">
-          <span className="auth-brand-title">ZED CONSIGN</span>
-          <button type="button" className="modal-close-btn" onClick={onClose}>
+          <div className="auth-brand-logo-row">
+            <span className="brand-kick">ZED</span>
+            <span className="brand-avenue">CONSIGN</span>
+          </div>
+          <button
+            type="button"
+            className="modal-close-btn"
+            onClick={onClose}
+            aria-label="Tutup Dialog"
+          >
             &times;
           </button>
         </div>
@@ -103,15 +153,16 @@ function AuthModal({ mode, onClose, onAuthSuccess }) {
                     type="text"
                     required
                     className="form-input"
-                    placeholder="Contoh: Shiddiq Yazid"
+                    placeholder="Contoh: Shiddiq Yazid Nurhakim"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    autoFocus={!isLogin}
                   />
                 </div>
               )}
 
               <div className="form-group">
-                <label className="form-label">Email</label>
+                <label className="form-label">Alamat Email</label>
                 <input
                   type="email"
                   required
@@ -119,6 +170,7 @@ function AuthModal({ mode, onClose, onAuthSuccess }) {
                   placeholder="nama@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoFocus={isLogin}
                 />
               </div>
 
@@ -144,6 +196,19 @@ function AuthModal({ mode, onClose, onAuthSuccess }) {
                   : isLogin
                   ? 'Masuk ke ZedConsign'
                   : 'Daftar Akun Baru'}
+              </button>
+
+              <div className="auth-divider" style={{ margin: '14px 0 10px' }}>
+                <span>atau untuk pengujian cepat</span>
+              </div>
+
+              <button
+                type="button"
+                className="btn-quick-demo-login"
+                onClick={handleQuickDemo}
+                disabled={isSubmitting}
+              >
+                ⚡ Masuk Cepat sebagai Mahasiswa (Shiddiq Yazid)
               </button>
 
               <p className="auth-disclaimer">

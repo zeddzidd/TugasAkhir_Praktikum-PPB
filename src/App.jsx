@@ -136,6 +136,7 @@ function App() {
         {tab === 'profile' && (
           <Profile
             onNavigateManage={() => handleSelectTab('manage')}
+            onAuthChange={(user) => setCurrentUser(user)}
           />
         )}
       </main>

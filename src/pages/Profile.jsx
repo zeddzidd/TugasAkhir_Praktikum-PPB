@@ -8,7 +8,7 @@ import {
   isSupabaseConfigured,
 } from '../lib/supabase.js'
 
-function Profile({ onNavigateManage }) {
+function Profile({ onNavigateManage, onAuthChange }) {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -70,6 +70,7 @@ function Profile({ onNavigateManage }) {
       }
 
       setSession(result)
+      if (onAuthChange) onAuthChange(result.user)
       setEmail('')
       setPassword('')
       setFullName('')
@@ -98,6 +99,7 @@ function Profile({ onNavigateManage }) {
         })
       })
       setSession(result)
+      if (onAuthChange) onAuthChange(result.user)
     } catch (err) {
       setFormError(err.message || 'Gagal login demo.')
     } finally {
@@ -109,6 +111,7 @@ function Profile({ onNavigateManage }) {
   const handleLogout = async () => {
     await signOutUser()
     setSession(null)
+    if (onAuthChange) onAuthChange(null)
   }
 
   // Open Edit Profile
@@ -131,6 +134,7 @@ function Profile({ onNavigateManage }) {
         phone: editPhone,
       })
       setSession(updated)
+      if (onAuthChange) onAuthChange(updated.user)
       setIsEditModalOpen(false)
     } catch (err) {
       alert('Gagal memperbarui profil: ' + err.message)

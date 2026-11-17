@@ -226,6 +226,58 @@
   transform: translateY(-1px);
 }
 
+/* Mobile Header Auth Group (Visible on screens < 900px) */
+.mobile-header-auth-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+
+@media (min-width: 900px) {
+  .mobile-header-auth-group {
+    display: none;
+  }
+}
+
+.mobile-auth-pills {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mobile-btn-login-text {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  padding: 6px 10px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+}
+
+.mobile-btn-login-text:hover {
+  background: #f3f4f6;
+}
+
+.mobile-btn-register-pill {
+  background: #111827;
+  color: #ffffff;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mobile-btn-register-pill:hover {
+  background: #000000;
+}
+
 .pwa-install-pill {
   background: #f3f4f6;
   color: #111827;
@@ -1118,15 +1170,88 @@ button.support-action-item:hover {
 }
 
 /* ==========================================================================
+   Global Modal Overlay & Dialog Styles (AuthModal, CRUD Modals, Edit Profile)
+   ========================================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+  animation: kaFadeIn 0.18s ease-out;
+}
+
+.modal-content {
+  background: #ffffff;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+  position: relative;
+  z-index: 1001;
+  animation: kaModalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid #f1f2f4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+/* ==========================================================================
    Auth Modal (Login / Register)
    ========================================================================== */
 .auth-modal-card {
   background: #ffffff;
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
   border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.28);
+  position: relative;
+  z-index: 1001;
+  animation: kaModalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .auth-modal-header {
@@ -1144,6 +1269,12 @@ button.support-action-item:hover {
   font-size: 20px;
   letter-spacing: -0.04em;
   color: #111827;
+}
+
+.auth-brand-logo-row {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
 }
 
 .auth-modal-body {
