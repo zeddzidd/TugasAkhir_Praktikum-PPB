@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { formatRupiah, CATEGORIES } from '../data/shoes.js'
+import ImageUploader from '../components/ImageUploader.jsx'
 
 const PRESET_IMAGES = [
   { label: 'Air Max Goadome Foam', value: '/shoes/goadome-foam.svg' },
@@ -472,18 +473,11 @@ function ManageShoes({ shoes, onAddShoe, onUpdateShoe, onDeleteShoe, onResetDefa
               </div>
 
               <div className="form-group">
-                <label className="form-label">Pilihan Ilustrasi / Gambar (Offline Ready)</label>
-                <select
-                  className="form-select"
+                <label className="form-label">Foto / Gambar Sepatu *</label>
+                <ImageUploader
                   value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                >
-                  {PRESET_IMAGES.map((img) => (
-                    <option key={img.value} value={img.value}>
-                      {img.label} ({img.value})
-                    </option>
-                  ))}
-                </select>
+                  onChange={(imgUri) => setFormData({ ...formData, image: imgUri })}
+                />
               </div>
 
               <div className="form-group">

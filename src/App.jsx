@@ -126,7 +126,11 @@ function App() {
           />
         )}
         {tab === 'consign' && (
-          <ConsignInfo onNavigateManage={() => handleSelectTab('manage')} />
+          <ConsignInfo
+            onAddShoe={handleAddShoe}
+            onNavigateCatalog={() => handleSelectTab('catalog')}
+            onNavigateManage={() => handleSelectTab('manage')}
+          />
         )}
         {tab === 'profile' && (
           <Profile
