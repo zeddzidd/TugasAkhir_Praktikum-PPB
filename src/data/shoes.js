@@ -142,6 +142,7 @@ export const CATEGORIES = ['Semua', 'Sneakers', 'Basketball', 'Running', 'Casual
 export const SUB_NAV_ITEMS = [
   { id: 'redemption', label: 'Redemption Center' },
   { id: 'express', label: 'Express Shipping', icon: '⚡' },
+  { id: 'standard', label: 'Standard Shipping', icon: '📦' },
   { id: 'Sneakers', label: 'Sneakers' },
   { id: 'Apparel', label: 'Apparel' },
   { id: 'Luxury', label: 'Luxury' },

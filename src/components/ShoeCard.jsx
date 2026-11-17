@@ -24,9 +24,13 @@ function ShoeCard({ shoe, onSelect }) {
             Authentic
           </span>
 
-          {shoe.isExpress && (
-            <span className="badge-express" title="Pengiriman Ekspres Tersedia">
+          {shoe.isExpress ? (
+            <span className="badge-express" title="Pengiriman Ekspres 1-2 Hari">
               ⚡ Express
+            </span>
+          ) : (
+            <span className="badge-standard" title="Pengiriman Standar 3-5 Hari">
+              📦 Standard
             </span>
           )}
         </div>

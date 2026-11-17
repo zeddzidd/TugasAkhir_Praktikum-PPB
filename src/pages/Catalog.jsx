@@ -106,11 +106,15 @@ function Catalog({
         // Sub-nav filters
         if (selectedSubNav === 'express') {
           if (!shoe.isExpress) return false
+        } else if (selectedSubNav === 'standard') {
+          // All items support standard shipping with thorough authentication inspection
+          if (shoe.isExpress && selectedSubNav === 'standard_only') return false
         } else if (
           selectedSubNav &&
           selectedSubNav !== 'all' &&
           selectedSubNav !== 'redemption' &&
-          selectedSubNav !== 'express'
+          selectedSubNav !== 'express' &&
+          selectedSubNav !== 'standard'
         ) {
           if (
             shoe.category !== selectedSubNav &&
@@ -290,6 +294,16 @@ function Catalog({
             onClick={() => onSelectSubNav('all')}
           >
             ⚡ Express Shipping Only &times;
+          </button>
+        )}
+        {selectedSubNav === 'standard' && (
+          <button
+            type="button"
+            className="category-pill-btn active"
+            style={{ background: '#3b82f6', color: '#ffffff' }}
+            onClick={() => onSelectSubNav('all')}
+          >
+            📦 Standard Shipping &times;
           </button>
         )}
       </div>

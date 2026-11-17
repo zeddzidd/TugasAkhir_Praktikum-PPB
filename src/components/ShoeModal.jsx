@@ -25,6 +25,7 @@ const BASE_SIZES_DATA = [
 function ShoeModal({ shoe, onClose, onNavigateConsign }) {
   const [sizeUnit, setSizeUnit] = useState('US') // 'US' | 'EU' | 'UK'
   const [selectedSizeIndex, setSelectedSizeIndex] = useState(10) // Default to US 9
+  const [shippingMethod, setShippingMethod] = useState(shoe?.isExpress ? 'express' : 'standard') // 'express' | 'standard'
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [bookmarkCount, setBookmarkCount] = useState(24)
   const [showSizeChart, setShowSizeChart] = useState(false)
@@ -32,6 +33,9 @@ function ShoeModal({ shoe, onClose, onNavigateConsign }) {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false)
   const [copyToast, setCopyToast] = useState(false)
   const [activeAngleIndex, setActiveAngleIndex] = useState(0)
+
+  const shippingFee = shippingMethod === 'express' ? 45000 : 20000
+  const totalPrice = currentPrice + shippingFee
 
   // Escape key handler
   useEffect(() => {
@@ -242,15 +246,72 @@ function ShoeModal({ shoe, onClose, onNavigateConsign }) {
               <span className="ka-banner-arrow">&rsaquo;</span>
             </div>
 
-            {/* Express Shipping Banner */}
-            <div className="ka-banner-express" onClick={() => alert('Pengiriman Express: Sepatu sudah siap di ZedConsign Vault dan langsung dikirim di hari kerja berikutnya.')}>
-              <div className="ka-banner-left">
-                <span className="ka-lightning-icon">⚡</span>
-                <span className="ka-banner-text">
-                  <strong>Express</strong> Ships next business day
+            {/* Shipping Method Selector (⚡ Express & 📦 Standard) */}
+            <div className="ka-shipping-choice-wrap">
+              <div className="ka-shipping-choice-header">
+                <span className="ka-shipping-choice-title">Metode Pengiriman (Shipping)</span>
+                <span className="ka-shipping-active-pill">
+                  {shippingMethod === 'express' ? '⚡ Express Aktif' : '📦 Standard Aktif'}
                 </span>
               </div>
-              <span className="ka-banner-arrow">&rsaquo;</span>
+
+              <div className="ka-shipping-options-grid">
+                {/* ⚡ Express Shipping Option */}
+                <div
+                  className={`ka-shipping-card ${shippingMethod === 'express' ? 'selected' : ''}`}
+                  onClick={() => setShippingMethod('express')}
+                  role="button"
+                  tabIndex={0}
+                  title="Pilih Pengiriman Express (1-2 hari kerja)"
+                >
+                  <div className="ka-shipping-card-left">
+                    <span className="ka-lightning-icon">⚡</span>
+                    <div>
+                      <div className="ka-shipping-card-title">
+                        <strong>Express</strong>
+                        <span className="ka-shipping-tag express">1 - 2 Hari</span>
+                      </div>
+                      <p className="ka-shipping-card-desc">
+                        Ships next business day (Siap kirim dari Vault)
+                      </p>
+                    </div>
+                  </div>
+                  <div className="ka-shipping-card-right">
+                    <span className="ka-shipping-cost">Rp 45.000</span>
+                    <span className="ka-shipping-radio-circle">
+                      {shippingMethod === 'express' ? '●' : '○'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 📦 Standard Shipping Option */}
+                <div
+                  className={`ka-shipping-card ${shippingMethod === 'standard' ? 'selected' : ''}`}
+                  onClick={() => setShippingMethod('standard')}
+                  role="button"
+                  tabIndex={0}
+                  title="Pilih Pengiriman Standard (3-5 hari kerja)"
+                >
+                  <div className="ka-shipping-card-left">
+                    <span className="ka-box-icon">📦</span>
+                    <div>
+                      <div className="ka-shipping-card-title">
+                        <strong>Standard</strong>
+                        <span className="ka-shipping-tag standard">3 - 5 Hari</span>
+                      </div>
+                      <p className="ka-shipping-card-desc">
+                        Reguler (Inspeksi fisik & autentikasi berstandar)
+                      </p>
+                    </div>
+                  </div>
+                  <div className="ka-shipping-card-right">
+                    <span className="ka-shipping-cost standard">Rp 20.000</span>
+                    <span className="ka-shipping-radio-circle">
+                      {shippingMethod === 'standard' ? '●' : '○'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* SKU & Color Row */}
@@ -524,10 +585,42 @@ function ShoeModal({ shoe, onClose, onNavigateConsign }) {
                   </div>
                 </div>
 
+                {/* Checkout Shipping Toggle */}
+                <div className="ka-checkout-shipping-select">
+                  <label className="ka-checkout-shipping-label">Pilih Metode Pengiriman:</label>
+                  <div className="ka-checkout-shipping-grid">
+                    <button
+                      type="button"
+                      className={`ka-checkout-ship-btn ${shippingMethod === 'express' ? 'active' : ''}`}
+                      onClick={() => setShippingMethod('express')}
+                    >
+                      <span className="ka-lightning-icon">⚡</span>
+                      <span>Express (1-2 Hari)</span>
+                      <strong>Rp 45.000</strong>
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`ka-checkout-ship-btn ${shippingMethod === 'standard' ? 'active' : ''}`}
+                      onClick={() => setShippingMethod('standard')}
+                    >
+                      <span className="ka-box-icon">📦</span>
+                      <span>Standard (3-5 Hari)</span>
+                      <strong>Rp 20.000</strong>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="ka-checkout-price-card">
                   <div className="ka-summary-line">
                     <span>Harga Produk ({getSizeLabel(selectedSize)})</span>
                     <strong>{formatRupiah(currentPrice)}</strong>
+                  </div>
+                  <div className="ka-summary-line">
+                    <span>
+                      Ongkos Kirim ({shippingMethod === 'express' ? '⚡ Express 1-2 Hari' : '📦 Standard 3-5 Hari'})
+                    </span>
+                    <strong>{formatRupiah(shippingFee)}</strong>
                   </div>
                   <div className="ka-summary-line">
                     <span>Biaya Autentikasi & Legit Check</span>
@@ -540,7 +633,7 @@ function ShoeModal({ shoe, onClose, onNavigateConsign }) {
                   <div className="ka-summary-divider" />
                   <div className="ka-summary-total">
                     <span>Total Pembayaran</span>
-                    <span className="ka-total-amount">{formatRupiah(currentPrice)}</span>
+                    <span className="ka-total-amount">{formatRupiah(totalPrice)}</span>
                   </div>
                 </div>
 
@@ -549,12 +642,12 @@ function ShoeModal({ shoe, onClose, onNavigateConsign }) {
                     type="button"
                     className="ka-btn-instant-buy"
                     onClick={() => {
-                      alert(`Pesanan berhasil diproses untuk ${shoe.name} (Ukuran ${getSizeLabel(selectedSize)}).\n\nAdmin ZedConsign akan menghubungi Anda untuk instruksi pembayaran escrow dan nomor resi pengiriman express.`)
+                      alert(`Pesanan berhasil diproses untuk ${shoe.name} (Ukuran ${getSizeLabel(selectedSize)}).\n\nMetode Pengiriman: ${shippingMethod === 'express' ? '⚡ Express (1-2 hari kerja)' : '📦 Standard (3-5 hari kerja)'}\nTotal: ${formatRupiah(totalPrice)}\n\nAdmin ZedConsign akan menghubungi Anda untuk instruksi pembayaran escrow dan nomor resi pengiriman.`)
                       setShowCheckoutModal(false)
                       onClose()
                     }}
                   >
-                    Beli Langsung ({formatRupiah(currentPrice)})
+                    Beli Langsung ({formatRupiah(totalPrice)})
                   </button>
 
                   <button
