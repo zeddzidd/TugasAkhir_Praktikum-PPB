@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { formatRupiah, CATEGORIES } from '../data/shoes.js'
 
 const PRESET_IMAGES = [
+  { label: 'Air Max Goadome Foam', value: '/shoes/goadome-foam.svg' },
   { label: 'Jordan Retro High', value: '/shoes/jordan-retro.svg' },
   { label: 'Nike Dunk Low', value: '/shoes/dunk-low.svg' },
   { label: 'Yeezy Boost 350', value: '/shoes/yeezy-boost.svg' },

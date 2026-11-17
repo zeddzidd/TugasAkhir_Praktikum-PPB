@@ -1,7 +1,25 @@
 export const DEFAULT_SHOES = [
   {
+    id: 'shoe-0',
+    name: 'Nike Air Max Goadome Low Foam',
+    colorway: 'SP GREEN GOBLIN',
+    brand: 'Nike',
+    category: 'Sneakers',
+    size: 'US 9 / EU 42.5',
+    condition: 'Brand New In Box (BNIB)',
+    price: 3299000,
+    image: '/shoes/goadome-foam.svg',
+    description:
+      'Siluet rugged futuristik Nike Air Max Goadome Low Foam dalam colorway ikonik SP Green Goblin. Mengombinasikan molded metallic foam upper bertekstur wave dengan visible full-length Air-Sole unit dan rugged all-terrain lug outsole.',
+    consignor: 'ZedConsign Vault',
+    stock: 3,
+    isFeatured: true,
+    isExpress: true,
+  },
+  {
     id: 'shoe-1',
     name: 'Air Jordan 1 High OG Chicago Lost & Found',
+    colorway: 'VARSITY RED / BLACK / SAIL',
     brand: 'Jordan',
     category: 'Basketball',
     size: 'US 9 / EU 42.5',
@@ -13,10 +31,12 @@ export const DEFAULT_SHOES = [
     consignor: 'Zed Store Official',
     stock: 2,
     isFeatured: true,
+    isExpress: true,
   },
   {
     id: 'shoe-2',
     name: 'Nike Dunk Low Retro White Black Panda',
+    colorway: 'WHITE / BLACK PANDA',
     brand: 'Nike',
     category: 'Sneakers',
     size: 'US 8.5 / EU 42',
@@ -28,10 +48,12 @@ export const DEFAULT_SHOES = [
     consignor: 'Consignor #4102',
     stock: 5,
     isFeatured: true,
+    isExpress: true,
   },
   {
     id: 'shoe-3',
     name: 'Yeezy Boost 350 V2 Beluga Reflective',
+    colorway: 'BELUGA / STEEPLE GREY / SOLAR RED',
     brand: 'Adidas',
     category: 'Running',
     size: 'US 9.5 / EU 43',
@@ -42,11 +64,13 @@ export const DEFAULT_SHOES = [
       'Desain futuristik dari lini Yeezy dengan Primeknit upper berbenang reflective, pull-tab oranye khas Beluga, dan midsole Boost berbalut ribbed cage TPU yang sangat empuk.',
     consignor: 'Consignor #1401',
     stock: 1,
-    isFeatured: false,
+    isFeatured: true,
+    isExpress: false,
   },
   {
     id: 'shoe-4',
     name: 'New Balance 990v5 Made in USA Grey',
+    colorway: 'CASTLEROCK / GREY',
     brand: 'New Balance',
     category: 'Casual',
     size: 'US 9 / EU 42.5',
@@ -57,11 +81,13 @@ export const DEFAULT_SHOES = [
       'Definisi kenyamanan dan kemewahan understated sneaker dad shoe. Dibuat di Amerika Serikat dengan material pigskin suede premium, breathable mesh, dan teknologi bantalan ENCAP.',
     consignor: 'Zed Vault',
     stock: 3,
-    isFeatured: true,
+    isFeatured: false,
+    isExpress: true,
   },
   {
     id: 'shoe-5',
     name: 'Adidas Samba OG Cloud White Core Black',
+    colorway: 'CLOUD WHITE / CORE BLACK / GUM',
     brand: 'Adidas',
     category: 'Casual',
     size: 'US 8 / EU 41',
@@ -73,10 +99,12 @@ export const DEFAULT_SHOES = [
     consignor: 'Consignor #4108',
     stock: 4,
     isFeatured: false,
+    isExpress: true,
   },
   {
     id: 'shoe-6',
     name: 'Travis Scott x Air Jordan 1 Low Mocha',
+    colorway: 'SAIL / UNIVERSITY RED / RIDGEROCK',
     brand: 'Jordan',
     category: 'Sneakers',
     size: 'US 10 / EU 44',
@@ -88,10 +116,23 @@ export const DEFAULT_SHOES = [
     consignor: 'Zed Collector Consignment',
     stock: 1,
     isFeatured: true,
+    isExpress: false,
   },
 ]
 
-export const CATEGORIES = ['Semua', 'Sneakers', 'Basketball', 'Running', 'Casual']
+export const CATEGORIES = ['Semua', 'Sneakers', 'Basketball', 'Running', 'Casual', 'Apparel', 'Luxury']
+
+export const SUB_NAV_ITEMS = [
+  { id: 'redemption', label: 'Redemption Center' },
+  { id: 'express', label: 'Express Shipping', icon: '⚡' },
+  { id: 'Sneakers', label: 'Sneakers' },
+  { id: 'Apparel', label: 'Apparel' },
+  { id: 'Luxury', label: 'Luxury' },
+  { id: 'Electronics', label: 'Electronics & Collectibles' },
+  { id: 'Watches', label: 'Watches' },
+  { id: 'K-Brands', label: 'K-Brands' },
+  { id: 'Trading Cards', label: 'Trading Cards' },
+]
 
 export const BRANDS = ['Semua', 'Jordan', 'Nike', 'Adidas', 'New Balance']
 
