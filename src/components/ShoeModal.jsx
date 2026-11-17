@@ -34,9 +34,6 @@ function ShoeModal({ shoe, onClose, onNavigateConsign }) {
   const [copyToast, setCopyToast] = useState(false)
   const [activeAngleIndex, setActiveAngleIndex] = useState(0)
 
-  const shippingFee = shippingMethod === 'express' ? 45000 : 20000
-  const totalPrice = currentPrice + shippingFee
-
   // Escape key handler
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -71,7 +68,9 @@ function ShoeModal({ shoe, onClose, onNavigateConsign }) {
   if (!shoe) return null
 
   const selectedSize = sizeItems[selectedSizeIndex] || sizeItems[10]
-  const currentPrice = selectedSize ? selectedSize.price : shoe.price
+  const currentPrice = selectedSize ? selectedSize.price : (shoe ? shoe.price : 2000000)
+  const shippingFee = shippingMethod === 'express' ? 45000 : 20000
+  const totalPrice = currentPrice + shippingFee
 
   // Toggle Bookmark
   const handleToggleBookmark = () => {
