@@ -17,12 +17,13 @@ function Catalog({
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
 
-  // Featured shoes for the hero carousel (6 slides)
-  const carouselShoes = useMemo(() => {
-    const featured = shoes.filter((s) => s.isFeatured)
-    if (featured.length >= 6) return featured.slice(0, 6)
-    return shoes.slice(0, 6)
-  }, [shoes])
+  // All shoes currently in the catalog are displayed in the hero banner carousel
+  const carouselShoes = shoes
+  const safeSlide =
+    carouselShoes.length > 0
+      ? ((currentSlide % carouselShoes.length) + carouselShoes.length) %
+        carouselShoes.length
+      : 0
 
   // Auto-advance carousel every 6s
   useEffect(() => {
@@ -136,8 +137,8 @@ function Catalog({
       })
   }, [shoes, searchQuery, selectedCategory, selectedSubNav, sortBy])
 
-  const currentHeroShoe = carouselShoes[currentSlide] || carouselShoes[0]
-  const nextHeroShoe = carouselShoes[(currentSlide + 1) % carouselShoes.length]
+  const currentHeroShoe = carouselShoes[safeSlide] || carouselShoes[0]
+  const nextHeroShoe = carouselShoes[(safeSlide + 1) % carouselShoes.length]
 
   return (
     <div className="catalog-page-container">
@@ -188,7 +189,7 @@ function Catalog({
           <div
             className="carousel-sliding-track"
             style={{
-              transform: `translateX(-${currentSlide * 100}%)`,
+              transform: `translateX(-${safeSlide * 100}%)`,
             }}
           >
             {carouselShoes.map((shoe) => (
@@ -226,10 +227,10 @@ function Catalog({
             ))}
           </div>
 
-          {/* Bottom-Right Counter Badge: "2/6" matching screenshot */}
+          {/* Bottom-Right Counter Badge: e.g. "1/8" matching catalog length */}
           <div className="hero-counter-badge-simple" onClick={(e) => e.stopPropagation()}>
             <span className="hero-counter-text">
-              {currentSlide + 1}/{carouselShoes.length}
+              {safeSlide + 1}/{carouselShoes.length}
             </span>
           </div>
         </section>
