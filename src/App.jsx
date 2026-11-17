@@ -114,6 +114,7 @@ function App() {
             selectedSubNav={selectedSubNav}
             onSelectSubNav={setSelectedSubNav}
             onNavigateManage={() => handleSelectTab('manage')}
+            onNavigateConsign={() => handleSelectTab('consign')}
           />
         )}
         {tab === 'manage' && (

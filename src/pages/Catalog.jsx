@@ -10,6 +10,7 @@ function Catalog({
   selectedSubNav,
   onSelectSubNav,
   onNavigateManage,
+  onNavigateConsign,
 }) {
   const [selectedCategory, setSelectedCategory] = useState('Semua')
   const [sortBy, setSortBy] = useState('default')
@@ -346,9 +347,13 @@ function Catalog({
         </div>
       )}
 
-      {/* Detailed Inspection Modal */}
+      {/* Detailed Inspection Modal with Kick Avenue Size Selector */}
       {activeShoe && (
-        <ShoeModal shoe={activeShoe} onClose={() => setActiveShoe(null)} />
+        <ShoeModal
+          shoe={activeShoe}
+          onClose={() => setActiveShoe(null)}
+          onNavigateConsign={onNavigateConsign}
+        />
       )}
     </div>
   )
