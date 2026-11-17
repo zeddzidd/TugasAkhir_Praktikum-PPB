@@ -213,7 +213,11 @@ function Catalog({
 
                 {/* Bottom-Left Information: Product Name & Colorway */}
                 <div className="hero-shoe-info">
-                  <h2 className="hero-shoe-title">{shoe.name.toUpperCase()}</h2>
+                  <h2 className="hero-shoe-title">
+                    {shoe.colorway === 'SHOX Z CALISTRA'
+                      ? shoe.brand.toUpperCase()
+                      : shoe.name.toUpperCase()}
+                  </h2>
                   <p className="hero-shoe-subtitle">
                     {shoe.colorway || shoe.brand.toUpperCase()}
                   </p>

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 40 360 160" fill="none">
+  <!-- Nike Shox Z Calistra Showcase Duo (Black & Ivory) -->
+  
+  <!-- Upper Shoe: Sleek Glossy Black Shox Calistra -->
+  <g transform="translate(10, -5) scale(0.92)">
+    <!-- Shox Heel Pillars / Columns -->
+    <rect x="58" y="142" width="16" height="24" rx="4" fill="#0f172a" stroke="#1e293b" stroke-width="1.5"/>
+    <rect x="80" y="142" width="16" height="24" rx="4" fill="#0f172a" stroke="#1e293b" stroke-width="1.5"/>
+    <!-- Shox Spring Plate Bridge -->
+    <path d="M48 166 L108 166 L108 170 L48 170 Z" fill="#020617"/>
+    <path d="M52 140 L106 140 L106 144 L52 144 Z" fill="#020617"/>
+    
+    <!-- Outsole Low Profile Front -->
+    <path d="M106 166 C160 166, 260 166, 335 156 C345 154, 348 148, 342 144 C320 142, 110 142, 106 144 Z" fill="#020617"/>
+    <rect x="290" y="156" width="30" height="4" fill="#ef4444" opacity="0.8"/>
+    
+    <!-- Patent Black Mary-Jane Silhouette Upper -->
+    <path d="M52 140 C42 108, 55 60, 68 55 C74 54, 82 66, 88 88 C95 106, 120 115, 170 120 C230 124, 305 128, 330 134 C338 137, 340 144, 332 145 C300 145, 120 144, 52 140 Z" fill="#090d16"/>
+    
+    <!-- Patent Leather Glossy Reflections & Textures -->
+    <path d="M130 120 C180 122, 260 126, 305 132 C280 126, 200 122, 140 120 Z" fill="#38bdf8" opacity="0.3"/>
+    <path d="M72 68 C80 92, 95 110, 140 118" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
+    <circle cx="68" cy="80" r="2" fill="#ffffff" opacity="0.5"/>
+    <circle cx="76" cy="88" r="2" fill="#ffffff" opacity="0.5"/>
+    <circle cx="86" cy="98" r="2" fill="#ffffff" opacity="0.5"/>
+
+    <!-- Distinctive Mary Jane Buckle Strap -->
+    <path d="M110 82 L90 142" stroke="#090d16" stroke-width="9" stroke-linecap="round"/>
+    <path d="M110 82 L90 142" stroke="#334155" stroke-width="6" stroke-linecap="round"/>
+    <!-- Silver Buckle Hardware -->
+    <rect x="94" y="106" width="10" height="14" rx="2" fill="#e2e8f0" stroke="#0f172a" stroke-width="2"/>
+    <rect x="98" y="111" width="2" height="4" fill="#0f172a"/>
+  </g>
+
+  <!-- Lower Foreground Shoe: Pale Ivory Oatmeal Shox Calistra -->
+  <g transform="translate(68, 55) scale(0.85)">
+    <!-- Shox Heel Pillars / Columns in Gum Beige -->
+    <rect x="58" y="142" width="16" height="24" rx="4" fill="#d4b996" stroke="#bfa07a" stroke-width="1.5"/>
+    <rect x="80" y="142" width="16" height="24" rx="4" fill="#d4b996" stroke="#bfa07a" stroke-width="1.5"/>
+    <path d="M48 166 L108 166 L108 170 L48 170 Z" fill="#bfa07a"/>
+    <path d="M52 140 L106 140 L106 144 L52 144 Z" fill="#bfa07a"/>
+
+    <!-- Outsole Gum Light -->
+    <path d="M106 166 C160 166, 260 166, 335 156 C345 154, 348 148, 342 144 C320 142, 110 142, 106 144 Z" fill="#d4b996"/>
+
+    <!-- Pale Ivory / Cream Upper -->
+    <path d="M52 140 C42 108, 55 60, 68 55 C74 54, 82 66, 88 88 C95 106, 120 115, 170 120 C230 124, 305 128, 330 134 C338 137, 340 144, 332 145 C300 145, 120 144, 52 140 Z" fill="#f5f0ea"/>
+
+    <!-- Quilted / Diamond Perforations -->
+    <path d="M140 124 Q 180 128 260 132" stroke="#e6ded3" stroke-width="3" stroke-dasharray="4,4"/>
+    <path d="M135 132 Q 175 136 250 140" stroke="#e6ded3" stroke-width="3" stroke-dasharray="4,4"/>
+
+    <!-- Buckle Strap in Pale Ivory -->
+    <path d="M110 82 L90 142" stroke="#f5f0ea" stroke-width="8" stroke-linecap="round"/>
+    <path d="M110 82 L90 142" stroke="#e2d8cb" stroke-width="5" stroke-linecap="round"/>
+    <!-- Silver Buckle Hardware -->
+    <rect x="94" y="106" width="10" height="14" rx="2" fill="#cbd5e1" stroke="#475569" stroke-width="1.5"/>
+    <rect x="98" y="111" width="2" height="4" fill="#475569"/>
+  </g>
+</svg>

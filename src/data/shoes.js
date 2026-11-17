@@ -1,5 +1,22 @@
 export const DEFAULT_SHOES = [
   {
+    id: 'shoe-shox',
+    name: 'Nike Shox Z Calistra',
+    colorway: 'SHOX Z CALISTRA',
+    brand: 'Nike',
+    category: 'Sneakers',
+    size: 'US 7W / EU 38',
+    condition: 'Brand New In Box (BNIB)',
+    price: 2899000,
+    image: '/shoes/shox-calistra.svg',
+    description:
+      'Siluet hybrid Mary Jane futuristik ikonik dari lini Nike Shox. Mengombinasikan patent leather upper dengan buckle strap adjustable, diamond textured tooling, dan twin heel Shox column pods berventilasi udara.',
+    consignor: 'ZedConsign Vault',
+    stock: 4,
+    isFeatured: true,
+    isExpress: true,
+  },
+  {
     id: 'shoe-0',
     name: 'Nike Air Max Goadome Low Foam',
     colorway: 'SP GREEN GOBLIN',

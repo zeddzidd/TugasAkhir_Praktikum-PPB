@@ -12,7 +12,7 @@ import { DEFAULT_SHOES } from './data/shoes.js'
 import { getCurrentSession } from './lib/supabase.js'
 import './App.css'
 
-const STORAGE_KEY = 'zedconsign_shoes_catalog_v2'
+const STORAGE_KEY = 'zedconsign_shoes_catalog_v3'
 
 function App() {
   const [tab, setTab] = useState('catalog')
