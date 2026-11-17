@@ -1542,98 +1542,477 @@ button.support-action-item:hover {
 }
 
 /* ==========================================================================
-   Profile Page (Mahasiswa PPB)
+   Header User Badge (Logged In)
    ========================================================================== */
-.profile-card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 32px 28px;
-  max-width: 800px;
-  margin: 0 auto;
+.header-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f4f5f7;
+  padding: 4px 12px 4px 5px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
 }
 
-.profile-header {
-  text-align: center;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #f1f2f4;
-  margin-bottom: 24px;
+.header-user-badge:hover {
+  background: #e5e7eb;
 }
 
-.profile-avatar {
-  width: 72px;
-  height: 72px;
+.header-avatar-circle {
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: #111827;
   color: #ffffff;
-  font-size: 26px;
+  font-size: 11px;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 14px;
 }
 
-.profile-name {
+.header-username {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* ==========================================================================
+   User Profile & Supabase Auth Portal
+   ========================================================================== */
+.user-profile-page {
+  max-width: 680px;
+  margin: 0 auto;
+  animation: fadeInProfile 0.25s ease;
+}
+
+@keyframes fadeInProfile {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.profile-loading-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #111827;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Profile Card (Logged In) */
+.user-profile-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 32px 28px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.user-profile-header {
+  text-align: center;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #f1f2f4;
+  margin-bottom: 20px;
+}
+
+.user-avatar-circle {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: #111827;
+  color: #ffffff;
+  font-size: 26px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  box-shadow: 0 4px 16px rgba(17, 24, 39, 0.2);
+}
+
+.user-name-title {
   font-size: 22px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.01em;
+}
+
+.user-email-text {
+  font-size: 13.5px;
+  color: #6b7280;
+  margin-top: 3px;
+}
+
+.user-badges-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.badge-user-verified {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #059669;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-user-status {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+
+/* User Stats Strip */
+.user-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  background: #f9fafb;
+  border: 1px solid #f1f2f4;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.user-stat-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-stat-num {
+  font-size: 14px;
   font-weight: 800;
   color: #111827;
 }
 
-.profile-nim {
-  font-size: 14px;
+.user-stat-lbl {
+  font-size: 11px;
   color: #6b7280;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
-.profile-group-badge {
-  display: inline-block;
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
-  color: #059669;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 3px 12px;
-  border-radius: var(--radius-full);
-  margin-top: 8px;
-}
-
-.profile-details-list {
+/* User Details Section */
+.user-details-section {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-bottom: 28px;
 }
 
-.detail-row {
+.section-subheading {
+  font-size: 15px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.detail-item-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 10px 0;
   border-bottom: 1px solid #f8f9fa;
   font-size: 13.5px;
 }
 
-@media (max-width: 580px) {
-  .detail-row {
-    flex-direction: column;
-    gap: 3px;
-  }
-}
-
-.detail-label {
+.detail-item-row .detail-label {
   color: #6b7280;
   font-weight: 500;
 }
 
-.detail-val {
+.detail-item-row .detail-value {
   color: #111827;
   font-weight: 700;
   text-align: right;
 }
 
-@media (max-width: 580px) {
-  .detail-val {
-    text-align: left;
-  }
+.font-mono {
+  font-family: monospace;
+  font-size: 12px;
+}
+
+/* User Actions */
+.user-profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.btn-edit-profile {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  color: #111827;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s ease;
+}
+
+.btn-edit-profile:hover {
+  background: #f3f4f6;
+}
+
+.btn-manage-shoes-link {
+  background: #111827;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 11px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
+}
+
+.btn-manage-shoes-link:hover {
+  background: #000000;
+}
+
+.btn-logout-user {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #e11d48;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
+}
+
+.btn-logout-user:hover {
+  background: #ffe4e6;
+}
+
+/* Student Credit Footer */
+.student-credit-box {
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  padding: 12px 16px;
+  text-align: center;
+}
+
+.student-credit-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4b5563;
+}
+
+.student-credit-text {
+  font-size: 11.5px;
+  color: #6b7280;
+  margin-top: 3px;
+}
+
+/* ==========================================================================
+   Auth Portal Card (Not Logged In)
+   ========================================================================== */
+.auth-portal-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 32px 28px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.auth-portal-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.auth-brand-logo {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: -0.04em;
+  color: #111827;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.auth-portal-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.01em;
+}
+
+.auth-portal-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+  line-height: 1.5;
+  max-width: 460px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.auth-mode-tabs {
+  display: flex;
+  background: #f3f4f6;
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  margin-top: 20px;
+  max-width: 360px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.mode-tab-btn {
+  flex: 1;
+  padding: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b7280;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.mode-tab-btn.active {
+  background: #ffffff;
+  color: #111827;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.auth-error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.auth-portal-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-portal-submit-btn {
+  background: #111827;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  margin-top: 10px;
+  transition: background 0.15s ease;
+}
+
+.auth-portal-submit-btn:hover {
+  background: #000000;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 18px 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.auth-divider span {
+  padding: 0 10px;
+  color: #9ca3af;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.btn-quick-demo-login {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+}
+
+.btn-quick-demo-login:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.auth-database-badge {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.badge-database-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+}
+
+.dot-pulse {
+  width: 7px;
+  height: 7px;
+  background: #16a34a;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
 }
 
 /* ==========================================================================

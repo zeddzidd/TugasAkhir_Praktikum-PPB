@@ -9,9 +9,19 @@ function Header({
   selectedSubNav,
   onSelectSubNav,
   onOpenAuth,
+  currentUser,
 }) {
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [canInstall, setCanInstall] = useState(false)
+
+  const initials = currentUser
+    ? (currentUser.fullName || currentUser.email || 'US')
+        .split(' ')
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : ''
 
   useEffect(() => {
     const handleBeforeInstall = (e) => {
@@ -129,22 +139,35 @@ function Header({
               Profile
             </button>
 
-            <div className="header-auth-group">
-              <button
-                type="button"
-                className="header-btn-login"
-                onClick={() => onOpenAuth('login')}
+            {currentUser ? (
+              <div
+                className="header-user-badge"
+                onClick={() => onSelectTab('profile')}
+                title="Buka Profil Pengguna"
               >
-                Login
-              </button>
-              <button
-                type="button"
-                className="header-btn-register"
-                onClick={() => onOpenAuth('register')}
-              >
-                Register
-              </button>
-            </div>
+                <div className="header-avatar-circle">{initials}</div>
+                <span className="header-username">
+                  {currentUser.fullName ? currentUser.fullName.split(' ')[0] : 'Profil'}
+                </span>
+              </div>
+            ) : (
+              <div className="header-auth-group">
+                <button
+                  type="button"
+                  className="header-btn-login"
+                  onClick={() => onOpenAuth('login')}
+                >
+                  Login
+                </button>
+                <button
+                  type="button"
+                  className="header-btn-register"
+                  onClick={() => onOpenAuth('register')}
+                >
+                  Register
+                </button>
+              </div>
+            )}
 
             {canInstall && (
               <button

@@ -1,22 +1,48 @@
 import { useState } from 'react'
+import { signUpUser, signInUser } from '../lib/supabase.js'
 
-function AuthModal({ mode, onClose }) {
+function AuthModal({ mode, onClose, onAuthSuccess }) {
   const [isLogin, setIsLogin] = useState(mode === 'login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setSuccessMsg(
-      isLogin
-        ? `Selamat datang kembali di ZedConsign!`
-        : `Akun ${name || 'User'} berhasil didaftarkan di ZedConsign!`
-    )
-    setTimeout(() => {
-      onClose()
-    }, 1500)
+    setErrorMsg('')
+    setIsSubmitting(true)
+
+    try {
+      let session
+      if (isLogin) {
+        session = await signInUser({ email, password })
+        setSuccessMsg(`Selamat datang kembali di ZedConsign!`)
+      } else {
+        if (!name.trim()) throw new Error('Mohon isi nama lengkap Anda.')
+        if (password.length < 6) throw new Error('Kata sandi minimal 6 karakter.')
+        session = await signUpUser({
+          email,
+          password,
+          fullName: name.trim(),
+        })
+        setSuccessMsg(`Akun ${name} berhasil didaftarkan di Supabase!`)
+      }
+
+      if (onAuthSuccess) {
+        onAuthSuccess(session)
+      }
+
+      setTimeout(() => {
+        onClose()
+      }, 1200)
+    } catch (err) {
+      setErrorMsg(err.message || 'Terjadi kesalahan autentikasi.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -36,6 +62,7 @@ function AuthModal({ mode, onClose }) {
               className={`auth-switch-btn ${isLogin ? 'active' : ''}`}
               onClick={() => {
                 setIsLogin(true)
+                setErrorMsg('')
                 setSuccessMsg('')
               }}
             >
@@ -46,6 +73,7 @@ function AuthModal({ mode, onClose }) {
               className={`auth-switch-btn ${!isLogin ? 'active' : ''}`}
               onClick={() => {
                 setIsLogin(false)
+                setErrorMsg('')
                 setSuccessMsg('')
               }}
             >
@@ -53,9 +81,15 @@ function AuthModal({ mode, onClose }) {
             </button>
           </div>
 
+          {errorMsg && (
+            <div className="auth-error-banner" style={{ marginBottom: '14px' }}>
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
           {successMsg ? (
             <div className="auth-success-box">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
               <span>{successMsg}</span>
@@ -94,18 +128,26 @@ function AuthModal({ mode, onClose }) {
                   type="password"
                   required
                   className="form-input"
-                  placeholder="••••••••"
+                  placeholder="Minimal 6 karakter"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
 
-              <button type="submit" className="auth-submit-btn">
-                {isLogin ? 'Masuk ke ZedConsign' : 'Buat Akun Baru'}
+              <button
+                type="submit"
+                className="auth-submit-btn"
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? 'Menghubungkan ke Supabase...'
+                  : isLogin
+                  ? 'Masuk ke ZedConsign'
+                  : 'Daftar Akun Baru (Supabase)'}
               </button>
 
               <p className="auth-disclaimer">
-                Dengan melanjutkan, Anda menyetujui Syarat &amp; Ketentuan serta Kebijakan Privasi ZedConsign Marketplace.
+                Autentikasi terenkripsi &amp; terhubung dengan database Supabase Cloud.
               </p>
             </form>
           )}

@@ -9,6 +9,7 @@ import ManageShoes from './pages/ManageShoes.jsx'
 import ConsignInfo from './pages/ConsignInfo.jsx'
 import Profile from './pages/Profile.jsx'
 import { DEFAULT_SHOES } from './data/shoes.js'
+import { getCurrentSession } from './lib/supabase.js'
 import './App.css'
 
 const STORAGE_KEY = 'zedconsign_shoes_catalog_v2'
@@ -18,6 +19,18 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSubNav, setSelectedSubNav] = useState('all')
   const [authModalMode, setAuthModalMode] = useState(null) // 'login' | 'register' | null
+  const [currentUser, setCurrentUser] = useState(null)
+
+  // Load session on launch
+  useEffect(() => {
+    async function checkAuth() {
+      const sess = await getCurrentSession()
+      if (sess?.user) {
+        setCurrentUser(sess.user)
+      }
+    }
+    checkAuth()
+  }, [])
 
   const [shoes, setShoes] = useState(() => {
     try {
@@ -25,7 +38,6 @@ function App() {
       if (saved) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // If saved doesn't have the new featured shoe, prepend or merge it
           const hasGoadome = parsed.some((s) => s.id === 'shoe-0')
           if (!hasGoadome) {
             return DEFAULT_SHOES
@@ -90,6 +102,7 @@ function App() {
         selectedSubNav={selectedSubNav}
         onSelectSubNav={(nav) => setSelectedSubNav(nav)}
         onOpenAuth={(mode) => setAuthModalMode(mode)}
+        currentUser={currentUser}
       />
 
       <main className="main-content">
@@ -115,7 +128,11 @@ function App() {
         {tab === 'consign' && (
           <ConsignInfo onNavigateManage={() => handleSelectTab('manage')} />
         )}
-        {tab === 'profile' && <Profile />}
+        {tab === 'profile' && (
+          <Profile
+            onNavigateManage={() => handleSelectTab('manage')}
+          />
+        )}
       </main>
 
       <Footer />
@@ -128,6 +145,9 @@ function App() {
         <AuthModal
           mode={authModalMode}
           onClose={() => setAuthModalMode(null)}
+          onAuthSuccess={(sess) => {
+            if (sess?.user) setCurrentUser(sess.user)
+          }}
         />
       )}
     </div>
