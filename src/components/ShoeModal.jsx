@@ -648,6 +648,10 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
                 type="button"
                 className="ka-sell-btn"
                 onClick={() => {
+                  if (!currentUser) {
+                    if (onOpenAuth) onOpenAuth('login')
+                    return
+                  }
                   onClose()
                   if (onNavigateConsign) {
                     onNavigateConsign()

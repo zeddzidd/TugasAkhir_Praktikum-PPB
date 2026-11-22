@@ -19,6 +19,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSubNav, setSelectedSubNav] = useState('all')
   const [authModalMode, setAuthModalMode] = useState(null) // 'login' | 'register' | null
+  const [pendingTabAfterAuth, setPendingTabAfterAuth] = useState(null)
   const [currentUser, setCurrentUser] = useState(null)
 
   // Load session on launch
@@ -69,13 +70,19 @@ function App() {
     }
   }, [shoes])
 
-  // Tab change with auth guard for selling
+  // Strictly redirect away from consign if user is not logged in
+  useEffect(() => {
+    if (!currentUser && tab === 'consign') {
+      setTab('catalog')
+    }
+  }, [currentUser, tab])
+
+  // Tab change with strict auth guard: Sell page cannot be opened without login
   const handleSelectTab = (newTab) => {
     if (newTab === 'consign' && !currentUser) {
-      setTab('consign')
+      setPendingTabAfterAuth('consign')
       setAuthModalMode('login')
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      return
+      return // Tetap di tab sekarang, halaman sell sama sekali tidak dibuka
     }
     setTab(newTab)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -145,7 +152,7 @@ function App() {
             onOpenAuth={(mode) => setAuthModalMode(mode || 'login')}
           />
         )}
-        {tab === 'consign' && (
+        {tab === 'consign' && currentUser && (
           <ConsignInfo
             onAddShoe={handleAddShoe}
             onNavigateCatalog={() => handleSelectTab('catalog')}
@@ -171,9 +178,18 @@ function App() {
       {authModalMode && (
         <AuthModal
           mode={authModalMode}
-          onClose={() => setAuthModalMode(null)}
+          onClose={() => {
+            setAuthModalMode(null)
+            setPendingTabAfterAuth(null)
+          }}
           onAuthSuccess={(sess) => {
-            if (sess?.user) setCurrentUser(sess.user)
+            if (sess?.user) {
+              setCurrentUser(sess.user)
+              if (pendingTabAfterAuth) {
+                setTab(pendingTabAfterAuth)
+                setPendingTabAfterAuth(null)
+              }
+            }
           }}
         />
       )}
