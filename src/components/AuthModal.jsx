@@ -6,6 +6,7 @@ function AuthModal({ mode, onClose, onAuthSuccess }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -43,6 +44,7 @@ function AuthModal({ mode, onClose, onAuthSuccess }) {
           email: email.trim(),
           password,
           fullName: name.trim(),
+          phone: phone.trim(),
         })
         setSuccessMsg(`Akun ${name} berhasil didaftarkan!`)
       }
@@ -147,18 +149,30 @@ function AuthModal({ mode, onClose, onAuthSuccess }) {
           ) : (
             <form onSubmit={handleSubmit} className="auth-form">
               {!isLogin && (
-                <div className="form-group">
-                  <label className="form-label">Nama Lengkap</label>
-                  <input
-                    type="text"
-                    required
-                    className="form-input"
-                    placeholder="Contoh: Shiddiq Yazid Nurhakim"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    autoFocus={!isLogin}
-                  />
-                </div>
+                <>
+                  <div className="form-group">
+                    <label className="form-label">Nama Lengkap *</label>
+                    <input
+                      type="text"
+                      required
+                      className="form-input"
+                      placeholder="Contoh: Shiddiq Yazid Nurhakim"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      autoFocus={!isLogin}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Nomor WhatsApp / HP</label>
+                    <input
+                      type="tel"
+                      className="form-input"
+                      placeholder="Contoh: 081234567890"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
+                  </div>
+                </>
               )}
 
               <div className="form-group">

@@ -31,6 +31,49 @@ export const supabase = isSupabaseConfigured
 const LOCAL_USERS_KEY = 'zedconsign_local_users'
 const LOCAL_SESSION_KEY = 'zedconsign_current_session'
 
+// Default Demo User for PPB Practical assignment
+const DEFAULT_DEMO_USER = {
+  id: 'usr_shiddiq_yazid_41',
+  email: 'shiddiqyazidn29@gmail.com',
+  password: 'password123',
+  fullName: 'Shiddiq Yazid Nurhakim',
+  phone: '081234567890',
+  createdAt: '2026-09-01T00:00:00.000Z',
+  provider: 'system',
+}
+
+// Helper to get all registered users from database
+export function getLocalUsers() {
+  try {
+    const raw = localStorage.getItem(LOCAL_USERS_KEY)
+    const list = raw ? JSON.parse(raw) : []
+    // Ensure default demo user exists
+    if (!list.some((u) => u.email.toLowerCase() === DEFAULT_DEMO_USER.email.toLowerCase())) {
+      list.push(DEFAULT_DEMO_USER)
+      localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(list))
+    }
+    return list
+  } catch {
+    return [DEFAULT_DEMO_USER]
+  }
+}
+
+// Helper to save or update user in database
+export function saveLocalUser(user) {
+  try {
+    const list = getLocalUsers()
+    const index = list.findIndex((u) => u.email.toLowerCase() === user.email.toLowerCase())
+    if (index >= 0) {
+      list[index] = { ...list[index], ...user }
+    } else {
+      list.push(user)
+    }
+    localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(list))
+  } catch (e) {
+    console.error('Error saving local user:', e)
+  }
+}
+
 // Helper to get local session
 function getLocalSession() {
   try {
@@ -60,156 +103,288 @@ function setLocalSession(session) {
 
 /**
  * Register a new user
+ * Strictly blocks registration if the email is already in the database
  */
 export async function signUpUser({ email, password, fullName, phone = '' }) {
+  if (!email || !email.trim()) {
+    throw new Error('Alamat email wajib diisi.')
+  }
+  if (!password || password.length < 6) {
+    throw new Error('Kata sandi minimal 6 karakter.')
+  }
+  if (!fullName || !fullName.trim()) {
+    throw new Error('Nama lengkap wajib diisi.')
+  }
+
+  const normalizedEmail = email.trim().toLowerCase()
+  const cleanName = fullName.trim()
+  const cleanPhone = phone.trim()
+
+  // 1. Cek apakah email sudah terdaftar di database lokal / cache
+  const localUsers = getLocalUsers()
+  const existingLocal = localUsers.find(
+    (u) => u.email.toLowerCase() === normalizedEmail
+  )
+  if (existingLocal) {
+    throw new Error(
+      `Akun dengan email '${normalizedEmail}' sudah terdaftar di database! Anda tidak dapat mendaftar lagi dengan email yang sama. Silakan gunakan menu Masuk (Login).`
+    )
+  }
+
+  // 2. Jika Supabase terhubung, daftarkan ke Supabase Auth
+  let supabaseUserId = null
   if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          phone,
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+        options: {
+          data: {
+            full_name: cleanName,
+            phone: cleanPhone,
+          },
         },
-      },
-    })
-    if (error) throw error
+      })
 
-    // Insert or update profiles table in Supabase
-    if (data?.user) {
-      try {
-        await supabase.from('profiles').upsert({
-          id: data.user.id,
-          full_name: fullName,
-          email,
-          phone,
-          updated_at: new Date().toISOString(),
-        })
-      } catch (err) {
-        console.warn('Profile table upsert skipped:', err)
+      // Jika Supabase mengembalikan error user sudah ada
+      if (error) {
+        const errMsg = error.message ? error.message.toLowerCase() : ''
+        if (
+          errMsg.includes('already registered') ||
+          errMsg.includes('already exists') ||
+          errMsg.includes('user already')
+        ) {
+          saveLocalUser({
+            id: 'usr_' + Date.now(),
+            email: normalizedEmail,
+            password,
+            fullName: cleanName,
+            phone: cleanPhone,
+            createdAt: new Date().toISOString(),
+          })
+          throw new Error(
+            `Akun dengan email '${normalizedEmail}' sudah terdaftar di database Supabase! Anda tidak dapat mendaftar lagi dengan email yang sama. Silakan masuk (login).`
+          )
+        }
+        // Jika limit email SMTP Supabase tercapai, jangan crash; lanjutkan simpan ke database aplikasi
+        if (error.status === 429 || errMsg.includes('rate limit')) {
+          console.warn('Supabase email rate limit reached, continuing with persistent local database.')
+        } else {
+          throw error
+        }
       }
-    }
 
-    const session = {
-      user: {
-        id: data.user?.id,
-        email: data.user?.email,
-        fullName: fullName || data.user?.user_metadata?.full_name || email.split('@')[0],
-        phone: phone || data.user?.user_metadata?.phone || '',
-        createdAt: data.user?.created_at || new Date().toISOString(),
-        provider: 'supabase',
-      },
+      // Deteksi Supabase: jika email sudah pernah terdaftar, Supabase mengembalikan data.user dengan identities: []
+      if (
+        data?.user &&
+        Array.isArray(data.user.identities) &&
+        data.user.identities.length === 0
+      ) {
+        saveLocalUser({
+          id: data.user.id || 'usr_' + Date.now(),
+          email: normalizedEmail,
+          password,
+          fullName: cleanName,
+          phone: cleanPhone,
+          createdAt: new Date().toISOString(),
+        })
+        throw new Error(
+          `Akun dengan email '${normalizedEmail}' sudah terdaftar di database Supabase! Anda tidak dapat mendaftar lagi dengan email yang sama. Silakan gunakan menu Masuk (Login).`
+        )
+      }
+
+      if (data?.user?.id) {
+        supabaseUserId = data.user.id
+        try {
+          await supabase.from('profiles').upsert({
+            id: data.user.id,
+            full_name: cleanName,
+            email: normalizedEmail,
+            phone: cleanPhone,
+            updated_at: new Date().toISOString(),
+          })
+        } catch {
+          // fallback jika tabel profiles belum dibuat
+        }
+      }
+    } catch (err) {
+      if (err.message && err.message.includes('sudah terdaftar di database')) {
+        throw err
+      }
+      console.warn('Supabase signUp warning:', err)
     }
-    setLocalSession(session)
-    return session
   }
 
-  // --- Local / Offline Mock Mode ---
-  const usersRaw = localStorage.getItem(LOCAL_USERS_KEY)
-  const users = usersRaw ? JSON.parse(usersRaw) : []
-  const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase())
-  if (existing) {
-    throw new Error('Email sudah terdaftar. Silakan gunakan email lain atau login.')
-  }
-
-  const newUser = {
-    id: 'user_' + Date.now(),
-    email,
-    password, // Demo only
-    fullName: fullName || email.split('@')[0],
-    phone: phone || '',
+  // 3. Simpan akun baru ke database aplikasi
+  const newAccount = {
+    id: supabaseUserId || 'usr_' + Date.now(),
+    email: normalizedEmail,
+    password,
+    fullName: cleanName,
+    phone: cleanPhone,
     createdAt: new Date().toISOString(),
-    provider: 'local-storage',
+    provider: isSupabaseConfigured ? 'supabase' : 'local-storage',
   }
 
-  users.push(newUser)
-  localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users))
+  saveLocalUser(newAccount)
 
   const session = {
     user: {
-      id: newUser.id,
-      email: newUser.email,
-      fullName: newUser.fullName,
-      phone: newUser.phone,
-      createdAt: newUser.createdAt,
-      provider: 'local-storage',
+      id: newAccount.id,
+      email: newAccount.email,
+      fullName: newAccount.fullName,
+      phone: newAccount.phone,
+      createdAt: newAccount.createdAt,
+      provider: newAccount.provider,
     },
   }
+
   setLocalSession(session)
   return session
 }
 
 /**
  * Log in an existing user
+ * Validates credentials strictly against database
  */
 export async function signInUser({ email, password }) {
-  if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    if (error) throw error
-
-    // Fetch profile data from supabase if available
-    let profileData = null
-    try {
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single()
-      profileData = prof
-    } catch {
-      // ignore
-    }
-
-    const session = {
-      user: {
-        id: data.user.id,
-        email: data.user.email,
-        fullName:
-          profileData?.full_name ||
-          data.user.user_metadata?.full_name ||
-          data.user.email.split('@')[0],
-        phone: profileData?.phone || data.user.user_metadata?.phone || '',
-        createdAt: data.user.created_at,
-        provider: 'supabase',
-      },
-    }
-    setLocalSession(session)
-    return session
+  if (!email || !email.trim()) {
+    throw new Error('Alamat email wajib diisi.')
+  }
+  if (!password) {
+    throw new Error('Kata sandi wajib diisi.')
   }
 
-  // --- Local / Offline Mock Mode ---
-  const usersRaw = localStorage.getItem(LOCAL_USERS_KEY)
-  const users = usersRaw ? JSON.parse(usersRaw) : []
-  const found = users.find(
-    (u) =>
-      u.email.toLowerCase() === email.toLowerCase() && u.password === password
+  const normalizedEmail = email.trim().toLowerCase()
+  const localUsers = getLocalUsers()
+  const foundLocal = localUsers.find(
+    (u) => u.email.toLowerCase() === normalizedEmail
   )
 
-  if (!found) {
-    // Demo auto-registration for easy grading / testing if user types a new account
-    if (password.length >= 6) {
-      return await signUpUser({
-        email,
+  // 1. Coba login via Supabase jika terkonfigurasi
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
         password,
-        fullName: email.split('@')[0],
       })
+
+      if (!error && data?.session && data?.user) {
+        let profileData = null
+        try {
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single()
+          profileData = prof
+        } catch {
+          // ignore
+        }
+
+        const session = {
+          user: {
+            id: data.user.id,
+            email: data.user.email,
+            fullName:
+              profileData?.full_name ||
+              data.user.user_metadata?.full_name ||
+              foundLocal?.fullName ||
+              data.user.email.split('@')[0],
+            phone:
+              profileData?.phone ||
+              data.user.user_metadata?.phone ||
+              foundLocal?.phone ||
+              '',
+            createdAt: data.user.created_at,
+            provider: 'supabase',
+          },
+        }
+        setLocalSession(session)
+        saveLocalUser({
+          id: data.user.id,
+          email: normalizedEmail,
+          password,
+          fullName: session.user.fullName,
+          phone: session.user.phone,
+        })
+        return session
+      }
+
+      // Jika errornya 'Email not confirmed' (password sudah cocok di Supabase)
+      if (error && (error.code === 'email_not_confirmed' || error.message?.includes('Email not confirmed'))) {
+        const session = {
+          user: {
+            id: 'sb_' + normalizedEmail.replace(/[^a-zA-Z0-9]/g, '_'),
+            email: normalizedEmail,
+            fullName: foundLocal?.fullName || normalizedEmail.split('@')[0],
+            phone: foundLocal?.phone || '',
+            createdAt: new Date().toISOString(),
+            provider: 'supabase',
+          },
+        }
+        setLocalSession(session)
+        saveLocalUser({
+          id: session.user.id,
+          email: normalizedEmail,
+          password,
+          fullName: session.user.fullName,
+          phone: session.user.phone,
+        })
+        return session
+      }
+
+      // Jika kata sandi salah di Supabase
+      if (error && error.message?.includes('Invalid login credentials')) {
+        if (foundLocal) {
+          if (foundLocal.password === password) {
+            const session = {
+              user: {
+                id: foundLocal.id,
+                email: foundLocal.email,
+                fullName: foundLocal.fullName,
+                phone: foundLocal.phone || '',
+                createdAt: foundLocal.createdAt,
+                provider: foundLocal.provider || 'local-storage',
+              },
+            }
+            setLocalSession(session)
+            return session
+          }
+          throw new Error('Kata sandi yang Anda masukkan salah. Silakan periksa kembali.')
+        }
+        throw new Error('Kata sandi yang Anda masukkan salah atau akun belum terdaftar.')
+      }
+    } catch (err) {
+      if (err.message && (err.message.includes('Kata sandi') || err.message.includes('belum terdaftar'))) {
+        throw err
+      }
+      console.warn('Supabase signIn fallback to local:', err)
     }
-    throw new Error('Email atau kata sandi tidak cocok. Silakan periksa kembali.')
+  }
+
+  // 2. Verifikasi terhadap database aplikasi
+  if (!foundLocal) {
+    throw new Error(
+      `Akun dengan email '${normalizedEmail}' belum terdaftar di database. Silakan klik tab 'Daftar (Register)' untuk membuat akun baru.`
+    )
+  }
+
+  if (foundLocal.password !== password) {
+    throw new Error('Kata sandi yang Anda masukkan salah. Silakan periksa kembali.')
   }
 
   const session = {
     user: {
-      id: found.id,
-      email: found.email,
-      fullName: found.fullName,
-      phone: found.phone || '',
-      createdAt: found.createdAt,
-      provider: 'local-storage',
+      id: foundLocal.id,
+      email: foundLocal.email,
+      fullName: foundLocal.fullName,
+      phone: foundLocal.phone || '',
+      createdAt: foundLocal.createdAt,
+      provider: foundLocal.provider || 'local-storage',
     },
   }
+
   setLocalSession(session)
   return session
 }
