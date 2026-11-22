@@ -4022,6 +4022,231 @@ button.support-action-item:hover {
 }
 
 /* ==========================================================================
+   Sell Page Auth Lock & Verified Seller Banner
+   ========================================================================== */
+.sell-auth-lock-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: #fffbeb;
+  border: 1.5px solid #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.sell-auth-lock-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #fef3c7;
+  color: #d97706;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sell-auth-lock-content {
+  flex: 1;
+}
+
+.sell-auth-lock-badge {
+  display: inline-block;
+  background: #fef3c7;
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  margin-bottom: 6px;
+}
+
+.sell-auth-lock-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #92400e;
+  margin: 0 0 6px 0;
+}
+
+.sell-auth-lock-desc {
+  font-size: 13px;
+  color: #78350f;
+  line-height: 1.5;
+  margin: 0 0 14px 0;
+}
+
+.sell-auth-lock-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-sell-login {
+  background: #111827;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-sell-login:hover {
+  background: #000000;
+  transform: translateY(-1px);
+}
+
+.btn-sell-register {
+  background: #ffffff;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-sell-register:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* Verified Seller Active Banner */
+.sell-auth-logged-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-left: 4px solid #16a34a;
+  border-radius: 12px;
+  padding: 12px 18px;
+  margin-bottom: 24px;
+}
+
+.sell-auth-logged-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #15803d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sell-auth-logged-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.sell-auth-logged-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #15803d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sell-auth-logged-name {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.sell-auth-logged-email {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.sell-auth-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #15803d;
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+/* Locked submit button style */
+.btn-submit-locked {
+  background: #111827 !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  border: 1.5px solid #374151 !important;
+}
+
+.btn-submit-locked:hover {
+  background: #000000 !important;
+  border-color: #000000 !important;
+}
+
+/* Manage shoes guest banner */
+.manage-guest-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 24px;
+}
+
+.guest-banner-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.guest-banner-text {
+  flex: 1;
+}
+
+.guest-banner-text strong {
+  display: block;
+  font-size: 13.5px;
+  color: #92400e;
+}
+
+.guest-banner-text p {
+  font-size: 12.5px;
+  color: #78350f;
+  margin: 2px 0 0 0;
+}
+
+.btn-guest-login {
+  background: #111827;
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-guest-login:hover {
+  background: #000000;
+}
+
+/* ==========================================================================
    Footer
    ========================================================================== */
 .app-footer {

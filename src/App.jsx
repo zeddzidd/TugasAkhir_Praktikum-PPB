@@ -69,8 +69,14 @@ function App() {
     }
   }, [shoes])
 
-  // Scroll to top on tab change
+  // Tab change with auth guard for selling
   const handleSelectTab = (newTab) => {
+    if (newTab === 'consign' && !currentUser) {
+      setTab('consign')
+      setAuthModalMode('login')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
     setTab(newTab)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -133,6 +139,8 @@ function App() {
             onUpdateShoe={handleUpdateShoe}
             onDeleteShoe={handleDeleteShoe}
             onResetDefault={handleResetDefault}
+            currentUser={currentUser}
+            onOpenAuth={(mode) => setAuthModalMode(mode || 'login')}
           />
         )}
         {tab === 'consign' && (
@@ -140,6 +148,8 @@ function App() {
             onAddShoe={handleAddShoe}
             onNavigateCatalog={() => handleSelectTab('catalog')}
             onNavigateManage={() => handleSelectTab('manage')}
+            currentUser={currentUser}
+            onOpenAuth={(mode) => setAuthModalMode(mode || 'login')}
           />
         )}
         {tab === 'profile' && (

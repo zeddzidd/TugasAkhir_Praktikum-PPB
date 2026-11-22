@@ -1,8 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { formatRupiah, CATEGORIES, BRANDS } from '../data/shoes.js'
 import ImageUploader from '../components/ImageUploader.jsx'
 
-function ConsignInfo({ onAddShoe, onNavigateCatalog, onNavigateManage }) {
+function ConsignInfo({
+  onAddShoe,
+  onNavigateCatalog,
+  onNavigateManage,
+  currentUser,
+  onOpenAuth,
+}) {
   // Calculator State
   const [askingPrice, setAskingPrice] = useState(2500000)
   const feeRate = 0.05 // 5% fee
@@ -22,10 +28,29 @@ function ConsignInfo({ onAddShoe, onNavigateCatalog, onNavigateManage }) {
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
 
+  // Pre-fill consignor when user is logged in
+  useEffect(() => {
+    if (currentUser) {
+      const sellerName = currentUser.fullName || currentUser.user_metadata?.full_name || ''
+      const sellerPhone = currentUser.phone || currentUser.user_metadata?.phone || ''
+      if (sellerName) {
+        setConsignor(sellerPhone ? `${sellerName} (${sellerPhone})` : sellerName)
+      } else if (currentUser.email) {
+        setConsignor(currentUser.email)
+      }
+    }
+  }, [currentUser])
+
   const handleSellSubmit = (e) => {
     e.preventDefault()
     setErrorMessage('')
     setSuccessMessage('')
+
+    if (!currentUser) {
+      setErrorMessage('Anda harus masuk (login) terlebih dahulu sebelum dapat mengajukan titip jual sepatu!')
+      if (onOpenAuth) onOpenAuth('login')
+      return
+    }
 
     if (!name.trim()) {
       setErrorMessage('Mohon masukkan nama sepatu!')
@@ -165,6 +190,63 @@ function ConsignInfo({ onAddShoe, onNavigateCatalog, onNavigateManage }) {
             </p>
           </div>
         </div>
+
+        {/* Authentication Notice for Consignors */}
+        {!currentUser ? (
+          <div className="sell-auth-lock-card">
+            <div className="sell-auth-lock-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </div>
+            <div className="sell-auth-lock-content">
+              <span className="sell-auth-lock-badge">Autentikasi Diperlukan</span>
+              <h3 className="sell-auth-lock-title">Login Terlebih Dahulu untuk Menjual Sepatu</h3>
+              <p className="sell-auth-lock-desc">
+                Demi keamanan transaksi, verifikasi kepemilikan unit authentic, dan pencairan dana hasil penjualan ke rekening Anda, silakan masuk ke akun ZedConsign terlebih dahulu.
+              </p>
+              <div className="sell-auth-lock-buttons">
+                <button
+                  type="button"
+                  className="btn-sell-login"
+                  onClick={() => onOpenAuth && onOpenAuth('login')}
+                >
+                  Masuk (Login)
+                </button>
+                <button
+                  type="button"
+                  className="btn-sell-register"
+                  onClick={() => onOpenAuth && onOpenAuth('register')}
+                >
+                  Daftar Akun Baru
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="sell-auth-logged-card">
+            <div className="sell-auth-logged-avatar">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <div className="sell-auth-logged-info">
+              <span className="sell-auth-logged-label">Penjual Terverifikasi</span>
+              <strong className="sell-auth-logged-name">
+                {currentUser.fullName || currentUser.user_metadata?.full_name || currentUser.email}
+              </strong>
+              <span className="sell-auth-logged-email">{currentUser.email}</span>
+            </div>
+            <div className="sell-auth-verified-badge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Verified Seller
+            </div>
+          </div>
+        )}
 
         {errorMessage && (
           <div className="auth-error-banner" style={{ marginBottom: '16px' }}>
@@ -313,9 +395,23 @@ function ConsignInfo({ onAddShoe, onNavigateCatalog, onNavigateManage }) {
           </div>
 
           <div className="sell-form-submit-row">
-            <button type="submit" className="btn-submit-consign">
-              🚀 Kirim Pengajuan Titip Jual (Tayang ke Katalog)
-            </button>
+            {!currentUser ? (
+              <button
+                type="button"
+                className="btn-submit-consign btn-submit-locked"
+                onClick={() => onOpenAuth && onOpenAuth('login')}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{ marginRight: '8px' }}>
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                Masuk Akun untuk Mengajukan Titip Jual
+              </button>
+            ) : (
+              <button type="submit" className="btn-submit-consign">
+                🚀 Kirim Pengajuan Titip Jual (Tayang ke Katalog)
+              </button>
+            )}
             {onNavigateManage && (
               <button
                 type="button"

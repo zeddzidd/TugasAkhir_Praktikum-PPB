@@ -26,7 +26,15 @@ const INITIAL_FORM = {
   description: '',
 }
 
-function ManageShoes({ shoes, onAddShoe, onUpdateShoe, onDeleteShoe, onResetDefault }) {
+function ManageShoes({
+  shoes,
+  onAddShoe,
+  onUpdateShoe,
+  onDeleteShoe,
+  onResetDefault,
+  currentUser,
+  onOpenAuth,
+}) {
   const [search, setSearch] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingShoe, setEditingShoe] = useState(null)
@@ -48,6 +56,10 @@ function ManageShoes({ shoes, onAddShoe, onUpdateShoe, onDeleteShoe, onResetDefa
   )
 
   const handleOpenAddModal = () => {
+    if (!currentUser) {
+      if (onOpenAuth) onOpenAuth('login')
+      return
+    }
     setEditingShoe(null)
     setFormData(INITIAL_FORM)
     setErrorMsg('')
@@ -55,6 +67,10 @@ function ManageShoes({ shoes, onAddShoe, onUpdateShoe, onDeleteShoe, onResetDefa
   }
 
   const handleOpenEditModal = (shoe) => {
+    if (!currentUser) {
+      if (onOpenAuth) onOpenAuth('login')
+      return
+    }
     setEditingShoe(shoe)
     const shoeImgs = Array.isArray(shoe.images) && shoe.images.length > 0
       ? shoe.images
@@ -134,6 +150,24 @@ function ManageShoes({ shoes, onAddShoe, onUpdateShoe, onDeleteShoe, onResetDefa
 
   return (
     <div>
+      {/* Guest Banner if not logged in */}
+      {!currentUser && (
+        <div className="manage-guest-banner">
+          <div className="guest-banner-icon">🔒</div>
+          <div className="guest-banner-text">
+            <strong>Mode Pratinjau Inventaris (Tamu)</strong>
+            <p>Untuk menambah, mengedit, atau menghapus sepatu dari katalog inventaris, Anda harus masuk (login) terlebih dahulu.</p>
+          </div>
+          <button
+            type="button"
+            className="btn-guest-login"
+            onClick={() => onOpenAuth && onOpenAuth('login')}
+          >
+            Masuk Akun
+          </button>
+        </div>
+      )}
+
       {/* CRUD Page Header */}
       <div className="crud-page-header">
         <div className="crud-title-group">
@@ -332,7 +366,13 @@ function ManageShoes({ shoes, onAddShoe, onUpdateShoe, onDeleteShoe, onResetDefa
                         type="button"
                         className="btn-danger"
                         style={{ padding: '6px 12px', fontSize: '13px' }}
-                        onClick={() => setDeleteCandidate(shoe)}
+                        onClick={() => {
+                          if (!currentUser) {
+                            if (onOpenAuth) onOpenAuth('login')
+                            return
+                          }
+                          setDeleteCandidate(shoe)
+                        }}
                         title="Hapus sepatu dari katalog"
                       >
                         Hapus
