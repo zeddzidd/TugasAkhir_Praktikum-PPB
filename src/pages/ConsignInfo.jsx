@@ -16,7 +16,7 @@ function ConsignInfo({ onAddShoe, onNavigateCatalog, onNavigateManage }) {
   const [size, setSize] = useState('US 9 / EU 42.5')
   const [condition, setCondition] = useState('Brand New In Box (BNIB)')
   const [price, setPrice] = useState('')
-  const [image, setImage] = useState('/shoes/dunk-low.svg')
+  const [images, setImages] = useState(['/shoes/dunk-low.svg'])
   const [consignor, setConsignor] = useState('')
   const [description, setDescription] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
@@ -38,6 +38,9 @@ function ConsignInfo({ onAddShoe, onNavigateCatalog, onNavigateManage }) {
       return
     }
 
+    const primaryImage = images[0] || '/shoes/dunk-low.svg'
+    const finalImages = images.length > 0 ? images : [primaryImage]
+
     const newShoe = {
       id: `consign-${Date.now()}`,
       name: name.trim(),
@@ -46,7 +49,8 @@ function ConsignInfo({ onAddShoe, onNavigateCatalog, onNavigateManage }) {
       size: size.trim(),
       condition,
       price: priceNum,
-      image: image || '/shoes/dunk-low.svg',
+      image: primaryImage,
+      images: finalImages,
       consignor: consignor.trim() || 'Verified Consignor',
       description: description.trim() || 'Sepatu titip jual terverifikasi kondisi autentik 100%.',
       stock: 1,
@@ -58,12 +62,12 @@ function ConsignInfo({ onAddShoe, onNavigateCatalog, onNavigateManage }) {
       onAddShoe(newShoe)
     }
 
-    setSuccessMessage(`Sepatu "${newShoe.name}" berhasil didaftarkan dan langsung tayang di katalog ZedConsign!`)
+    setSuccessMessage(`Sepatu "${newShoe.name}" berhasil didaftarkan dan langsung tayang di katalog ZedConsign dengan ${finalImages.length} foto detail!`)
     setName('')
     setPrice('')
     setDescription('')
     setConsignor('')
-    setImage('/shoes/dunk-low.svg')
+    setImages(['/shoes/dunk-low.svg'])
   }
 
   return (
@@ -290,10 +294,11 @@ function ConsignInfo({ onAddShoe, onNavigateCatalog, onNavigateManage }) {
 
           {/* Image Uploader Component */}
           <div className="form-group" style={{ margin: '16px 0' }}>
-            <label className="form-label" style={{ fontSize: '13.5px', fontWeight: '700' }}>
-              Foto Sepatu yang Ingin Dijual * (Upload File, Kamera HP, atau Preset)
-            </label>
-            <ImageUploader value={image} onChange={(newImg) => setImage(newImg)} />
+            <ImageUploader
+              images={images}
+              maxPhotos={8}
+              onChange={(newImgs) => setImages(newImgs)}
+            />
           </div>
 
           <div className="form-group">

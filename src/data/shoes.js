@@ -9,6 +9,12 @@ export const DEFAULT_SHOES = [
     condition: 'Brand New In Box (BNIB)',
     price: 2899000,
     image: '/shoes/shox-calistra.svg',
+    images: [
+      '/shoes/shox-calistra.svg',
+      '/shoes/goadome-foam.svg',
+      '/shoes/dunk-low.svg',
+      '/shoes/jordan-retro.svg',
+    ],
     description:
       'Siluet hybrid Mary Jane futuristik ikonik dari lini Nike Shox. Mengombinasikan patent leather upper dengan buckle strap adjustable, diamond textured tooling, dan twin heel Shox column pods berventilasi udara.',
     consignor: 'ZedConsign Vault',
@@ -26,6 +32,12 @@ export const DEFAULT_SHOES = [
     condition: 'Brand New In Box (BNIB)',
     price: 3299000,
     image: '/shoes/goadome-foam.svg',
+    images: [
+      '/shoes/goadome-foam.svg',
+      '/shoes/shox-calistra.svg',
+      '/shoes/new-balance.svg',
+      '/shoes/yeezy-boost.svg',
+    ],
     description:
       'Siluet rugged futuristik Nike Air Max Goadome Low Foam dalam colorway ikonik SP Green Goblin. Mengombinasikan molded metallic foam upper bertekstur wave dengan visible full-length Air-Sole unit dan rugged all-terrain lug outsole.',
     consignor: 'ZedConsign Vault',
@@ -43,6 +55,12 @@ export const DEFAULT_SHOES = [
     condition: 'Brand New In Box (BNIB)',
     price: 4850000,
     image: '/shoes/jordan-retro.svg',
+    images: [
+      '/shoes/jordan-retro.svg',
+      '/shoes/travis-scott.svg',
+      '/shoes/dunk-low.svg',
+      '/shoes/shox-calistra.svg',
+    ],
     description:
       'Ikonik sneaker legendaris dengan siluet high-top klasik colorway Chicago merah putih. Dilengkapi vintage aged midsole, crackled leather collar, dan receipt retro 1986. 100% Original Authentic verified by ZedConsign legit check.',
     consignor: 'Zed Store Official',
@@ -60,6 +78,12 @@ export const DEFAULT_SHOES = [
     condition: 'Brand New In Box (BNIB)',
     price: 1850000,
     image: '/shoes/dunk-low.svg',
+    images: [
+      '/shoes/dunk-low.svg',
+      '/shoes/samba-og.svg',
+      '/shoes/jordan-retro.svg',
+      '/shoes/new-balance.svg',
+    ],
     description:
       'Siluet paling populer dan versatile untuk daily wear. Kombinasi warna clean monochrome hitam dan putih dengan premium leather upper dan outsole karet berdaya cengkeram tinggi.',
     consignor: 'Consignor #4102',
@@ -77,6 +101,12 @@ export const DEFAULT_SHOES = [
     condition: 'Like New (VNDS 9.8/10)',
     price: 3600000,
     image: '/shoes/yeezy-boost.svg',
+    images: [
+      '/shoes/yeezy-boost.svg',
+      '/shoes/new-balance.svg',
+      '/shoes/samba-og.svg',
+      '/shoes/dunk-low.svg',
+    ],
     description:
       'Desain futuristik dari lini Yeezy dengan Primeknit upper berbenang reflective, pull-tab oranye khas Beluga, dan midsole Boost berbalut ribbed cage TPU yang sangat empuk.',
     consignor: 'Consignor #1401',
@@ -94,6 +124,12 @@ export const DEFAULT_SHOES = [
     condition: 'Brand New In Box (BNIB)',
     price: 3950000,
     image: '/shoes/new-balance.svg',
+    images: [
+      '/shoes/new-balance.svg',
+      '/shoes/samba-og.svg',
+      '/shoes/goadome-foam.svg',
+      '/shoes/yeezy-boost.svg',
+    ],
     description:
       'Definisi kenyamanan dan kemewahan understated sneaker dad shoe. Dibuat di Amerika Serikat dengan material pigskin suede premium, breathable mesh, dan teknologi bantalan ENCAP.',
     consignor: 'Zed Vault',
@@ -111,6 +147,12 @@ export const DEFAULT_SHOES = [
     condition: 'Brand New In Box (BNIB)',
     price: 2150000,
     image: '/shoes/samba-og.svg',
+    images: [
+      '/shoes/samba-og.svg',
+      '/shoes/dunk-low.svg',
+      '/shoes/new-balance.svg',
+      '/shoes/shox-calistra.svg',
+    ],
     description:
       'Klasik sepak bola era 1950 yang kini menjadi siluet street-style paling dicari di dunia. Suede T-toe overlay, 3-stripes hitam kontras, dan sol karet gum bernuansa vintage.',
     consignor: 'Consignor #4108',
@@ -128,6 +170,12 @@ export const DEFAULT_SHOES = [
     condition: 'Brand New In Box (BNIB)',
     price: 18500000,
     image: '/shoes/travis-scott.svg',
+    images: [
+      '/shoes/travis-scott.svg',
+      '/shoes/jordan-retro.svg',
+      '/shoes/dunk-low.svg',
+      '/shoes/yeezy-boost.svg',
+    ],
     description:
       'Holy Grail kolaborasi Travis Scott x Jordan Brand. Menampilkan reverse oversized Swoosh warna sail, suede nubuck cokelat mocha kaya serat, dan signature Cactus Jack embroidery merah di tumit.',
     consignor: 'Zed Collector Consignment',

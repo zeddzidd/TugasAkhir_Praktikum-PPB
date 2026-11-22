@@ -32,9 +32,53 @@ function ShoeModal({ shoe, onClose, onNavigateConsign }) {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   const [showCheckoutModal, setShowCheckoutModal] = useState(false)
   const [copyToast, setCopyToast] = useState(false)
-  const [activeAngleIndex, setActiveAngleIndex] = useState(0)
+  
+  // Multi-photo gallery support (up to 8 detail photos)
+  const shoePhotos = useMemo(() => {
+    if (Array.isArray(shoe?.images) && shoe.images.length > 0) {
+      return shoe.images
+    }
+    if (shoe?.image) {
+      return [shoe.image]
+    }
+    return ['/shoes/dunk-low.svg']
+  }, [shoe])
 
-  // Escape key handler
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0)
+  const [touchStartX, setTouchStartX] = useState(null)
+
+  // Reset active photo when shoe changes
+  useEffect(() => {
+    setActivePhotoIndex(0)
+  }, [shoe?.id])
+
+  const handlePrevPhoto = (e) => {
+    e?.stopPropagation()
+    setActivePhotoIndex((prev) => (prev > 0 ? prev - 1 : shoePhotos.length - 1))
+  }
+
+  const handleNextPhoto = (e) => {
+    e?.stopPropagation()
+    setActivePhotoIndex((prev) => (prev < shoePhotos.length - 1 ? prev + 1 : 0))
+  }
+
+  const handleTouchStart = (e) => {
+    setTouchStartX(e.touches[0].clientX)
+  }
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX === null) return
+    const touchEndX = e.changedTouches[0].clientX
+    const diff = touchStartX - touchEndX
+    if (diff > 45) {
+      handleNextPhoto()
+    } else if (diff < -45) {
+      handlePrevPhoto()
+    }
+    setTouchStartX(null)
+  }
+
+  // Keyboard navigation (Escape, ArrowLeft, ArrowRight)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -45,11 +89,15 @@ function ShoeModal({ shoe, onClose, onNavigateConsign }) {
         } else {
           onClose()
         }
+      } else if (e.key === 'ArrowLeft') {
+        setActivePhotoIndex((prev) => (prev > 0 ? prev - 1 : shoePhotos.length - 1))
+      } else if (e.key === 'ArrowRight') {
+        setActivePhotoIndex((prev) => (prev < shoePhotos.length - 1 ? prev + 1 : 0))
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose, showCheckoutModal, showSizeChart])
+  }, [onClose, showCheckoutModal, showSizeChart, shoePhotos.length])
 
   // Computed size items for this shoe
   const sizeItems = useMemo(() => {
@@ -151,47 +199,100 @@ function ShoeModal({ shoe, onClose, onNavigateConsign }) {
 
         {/* 2-Column Product Detail Layout (Exact Match to Kick Avenue UI) */}
         <div className="ka-detail-layout">
-          {/* LEFT COLUMN: Large Sneaker Showcase with Gallery Chevron */}
+          {/* LEFT COLUMN: Large Sneaker Showcase with Gallery Chevron & Detail Photos */}
           <div className="ka-col-gallery">
-            <div className="ka-image-showcase-box">
+            <div
+              className="ka-image-showcase-box"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              {/* Photo Counter Badge */}
+              <div className="ka-photo-counter-badge">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                <span>Foto {activePhotoIndex + 1} / {shoePhotos.length}</span>
+              </div>
+
               <img
-                src={shoe.image || '/shoes/dunk-low.svg'}
-                alt={shoe.name}
+                src={shoePhotos[activePhotoIndex]}
+                alt={`${shoe.name} - Foto ${activePhotoIndex + 1}`}
                 className="ka-main-shoe-img"
-                style={{
-                  transform: angleTransforms[activeAngleIndex],
-                  transition: 'transform 0.3s ease',
-                }}
                 onError={(e) => {
                   e.target.onerror = null
                   e.target.src = '/shoes/dunk-low.svg'
                 }}
               />
 
-              {/* Gallery Angle Next Chevron */}
-              <button
-                type="button"
-                className="ka-gallery-next-chevron"
-                onClick={handleNextAngle}
-                title="Lihat sudut berikutnya"
-                aria-label="Ganti sudut sepatu"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </button>
+              {/* Gallery Angle Prev Chevron */}
+              {shoePhotos.length > 1 && (
+                <button
+                  type="button"
+                  className="ka-gallery-prev-chevron"
+                  onClick={handlePrevPhoto}
+                  title="Foto sebelumnya"
+                  aria-label="Lihat foto sebelumnya"
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                </button>
+              )}
 
-              {/* 360 / Angle Indicators */}
+              {/* Gallery Angle Next Chevron */}
+              {shoePhotos.length > 1 && (
+                <button
+                  type="button"
+                  className="ka-gallery-next-chevron"
+                  onClick={handleNextPhoto}
+                  title="Foto berikutnya"
+                  aria-label="Lihat foto berikutnya"
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+              )}
+
+              {/* Angle / Dots Indicators */}
               <div className="ka-angle-dots">
-                {angleTransforms.map((_, idx) => (
+                {shoePhotos.map((_, idx) => (
                   <span
                     key={idx}
-                    className={`ka-angle-dot ${idx === activeAngleIndex ? 'active' : ''}`}
-                    onClick={() => setActiveAngleIndex(idx)}
+                    className={`ka-angle-dot ${idx === activePhotoIndex ? 'active' : ''}`}
+                    onClick={() => setActivePhotoIndex(idx)}
+                    title={`Lihat foto ${idx + 1}`}
                   />
                 ))}
               </div>
             </div>
+
+            {/* Thumbnail Strip for up to 8 Detail Photos */}
+            {shoePhotos.length > 1 && (
+              <div className="ka-thumbnails-strip">
+                {shoePhotos.map((imgSrc, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`ka-thumb-item ${idx === activePhotoIndex ? 'active' : ''}`}
+                    onClick={() => setActivePhotoIndex(idx)}
+                    title={`Lihat foto detail ${idx + 1}`}
+                  >
+                    <img
+                      src={imgSrc}
+                      alt={`Thumbnail ${idx + 1}`}
+                      className="ka-thumb-img"
+                      onError={(e) => {
+                        e.target.onerror = null
+                        e.target.src = '/shoes/dunk-low.svg'
+                      }}
+                    />
+                    <span className="ka-thumb-number">#{idx + 1}</span>
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Subtle Authentic Guarantee Under-Image Badge */}
             <div className="ka-gallery-badge-row">

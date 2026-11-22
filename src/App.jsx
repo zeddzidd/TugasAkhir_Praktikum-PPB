@@ -42,7 +42,16 @@ function App() {
           if (!hasGoadome) {
             return DEFAULT_SHOES
           }
-          return parsed
+          // Ensure all shoes have valid images array
+          return parsed.map((s) => {
+            const defaultMatch = DEFAULT_SHOES.find((d) => d.id === s.id)
+            return {
+              ...s,
+              images: (Array.isArray(s.images) && s.images.length > 0)
+                ? s.images
+                : (defaultMatch?.images || (s.image ? [s.image] : ['/shoes/dunk-low.svg'])),
+            }
+          })
         }
       }
     } catch (e) {

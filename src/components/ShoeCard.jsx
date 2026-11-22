@@ -36,6 +36,13 @@ function ShoeCard({ shoe, onSelect }) {
         </div>
 
         <span className="kick-condition-pill">{shoe.condition.split(' ')[0]}</span>
+
+        {/* Multi-Photo Counter Badge if shoe has multiple detail photos */}
+        {shoe.images && shoe.images.length > 1 && (
+          <span className="badge-photos-count" title={`${shoe.images.length} foto detail tersedia`}>
+            📷 {shoe.images.length} Foto
+          </span>
+        )}
       </div>
 
       <div className="kick-card-body">

@@ -20,6 +20,7 @@ const INITIAL_FORM = {
   condition: 'Brand New In Box (BNIB)',
   price: '',
   image: '/shoes/dunk-low.svg',
+  images: ['/shoes/dunk-low.svg'],
   stock: 1,
   consignor: 'ZedConsign Verified Seller',
   description: '',
@@ -55,6 +56,10 @@ function ManageShoes({ shoes, onAddShoe, onUpdateShoe, onDeleteShoe, onResetDefa
 
   const handleOpenEditModal = (shoe) => {
     setEditingShoe(shoe)
+    const shoeImgs = Array.isArray(shoe.images) && shoe.images.length > 0
+      ? shoe.images
+      : [shoe.image || '/shoes/dunk-low.svg']
+
     setFormData({
       name: shoe.name,
       brand: shoe.brand,
@@ -62,7 +67,8 @@ function ManageShoes({ shoes, onAddShoe, onUpdateShoe, onDeleteShoe, onResetDefa
       size: shoe.size,
       condition: shoe.condition,
       price: shoe.price,
-      image: shoe.image || '/shoes/dunk-low.svg',
+      image: shoeImgs[0] || '/shoes/dunk-low.svg',
+      images: shoeImgs,
       stock: shoe.stock || 1,
       consignor: shoe.consignor || 'ZedConsign Verified Seller',
       description: shoe.description || '',
@@ -88,11 +94,18 @@ function ManageShoes({ shoes, onAddShoe, onUpdateShoe, onDeleteShoe, onResetDefa
       return
     }
 
+    const finalImages = Array.isArray(formData.images) && formData.images.length > 0
+      ? formData.images
+      : [formData.image || '/shoes/dunk-low.svg']
+    const primaryImage = finalImages[0] || '/shoes/dunk-low.svg'
+
     if (editingShoe) {
       // Update
       onUpdateShoe({
         ...editingShoe,
         ...formData,
+        image: primaryImage,
+        images: finalImages,
         price: priceNum,
         stock: stockNum,
       })
@@ -101,6 +114,8 @@ function ManageShoes({ shoes, onAddShoe, onUpdateShoe, onDeleteShoe, onResetDefa
       const newShoe = {
         id: `shoe-${Date.now()}`,
         ...formData,
+        image: primaryImage,
+        images: finalImages,
         price: priceNum,
         stock: stockNum,
       }
@@ -473,10 +488,16 @@ function ManageShoes({ shoes, onAddShoe, onUpdateShoe, onDeleteShoe, onResetDefa
               </div>
 
               <div className="form-group">
-                <label className="form-label">Foto / Gambar Sepatu *</label>
                 <ImageUploader
-                  value={formData.image}
-                  onChange={(imgUri) => setFormData({ ...formData, image: imgUri })}
+                  images={formData.images || [formData.image || '/shoes/dunk-low.svg']}
+                  maxPhotos={8}
+                  onChange={(newImgs) =>
+                    setFormData({
+                      ...formData,
+                      images: newImgs,
+                      image: newImgs[0] || '/shoes/dunk-low.svg',
+                    })
+                  }
                 />
               </div>
 

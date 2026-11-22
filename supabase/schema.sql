@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS public.shoes (
   condition TEXT NOT NULL,
   price NUMERIC NOT NULL,
   image TEXT,
+  images TEXT[] DEFAULT '{}',
   description TEXT,
   consignor TEXT DEFAULT 'ZedConsign Verified Seller',
   stock INTEGER DEFAULT 1,

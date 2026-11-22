@@ -1,39 +1,74 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
   <defs>
+    <!-- Background Gradient: Deep Obsidian to Emerald Dark -->
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0f172a" />
-      <stop offset="50%" stop-color="#1e293b" />
-      <stop offset="100%" stop-color="#0284c7" />
+      <stop offset="0%" stop-color="#0a0f1d" />
+      <stop offset="50%" stop-color="#071b16" />
+      <stop offset="100%" stop-color="#02140e" />
     </linearGradient>
-    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#38bdf8" />
-      <stop offset="100%" stop-color="#6366f1" />
+
+    <!-- Accent Emerald Gradient -->
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00ffb2" />
+      <stop offset="100%" stop-color="#00a876" />
     </linearGradient>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#38bdf8" flood-opacity="0.35" />
+
+    <!-- Text Metallic Silver/White Gradient -->
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="65%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#cbd5e1" />
+    </linearGradient>
+
+    <!-- Radial Emerald Ambient Light -->
+    <radialGradient id="radialGlow" cx="50%" cy="45%" r="45%">
+      <stop offset="0%" stop-color="#00dfa2" stop-opacity="0.22" />
+      <stop offset="60%" stop-color="#00dfa2" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#00dfa2" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Glow & Shadow Filters -->
+    <filter id="emeraldGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="20" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="monogramShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.75" />
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#00dfa2" flood-opacity="0.35" />
     </filter>
   </defs>
-  <!-- Background Rounded App Icon -->
+
+  <!-- App Rounded Squircle Background -->
   <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+
+  <!-- Radial Light Ambient Glow -->
+  <rect width="512" height="512" rx="112" fill="url(#radialGlow)" />
   
-  <!-- Stylized Z Monogram & Sneaker Silhouette -->
-  <g filter="url(#glow)">
-    <!-- Sole -->
-    <path d="M96 352 C120 372, 200 376, 280 372 C350 368, 400 360, 420 344 C426 340, 422 328, 412 328 C370 328, 290 334, 210 334 C140 334, 100 338, 96 352 Z" fill="#f8fafc" />
-    <path d="M106 364 C180 380, 320 380, 410 356 C416 354, 412 366, 396 374 C340 398, 160 398, 106 364 Z" fill="#94a3b8" />
-    
-    <!-- Shoe Upper Body -->
-    <path d="M108 336 C110 300, 130 250, 180 230 C200 222, 230 240, 260 210 C290 180, 310 170, 330 200 C340 215, 330 240, 350 260 C380 280, 414 310, 414 330 C350 336, 180 336, 108 336 Z" fill="url(#accentGrad)" />
-    
-    <!-- Shoe Collar / Ankle -->
-    <path d="M260 210 C280 160, 250 140, 220 150 C190 160, 180 200, 180 230 Z" fill="#0284c7" />
-    <path d="M220 150 C240 130, 270 140, 260 210 Z" fill="#38bdf8" />
-    
-    <!-- Laces and Details -->
-    <path d="M236 215 L260 240 M254 195 L280 220 M274 175 L300 200" stroke="#f8fafc" stroke-width="6" stroke-linecap="round" />
-    <circle cx="340" cy="275" r="14" fill="#f8fafc" opacity="0.9" />
-    
-    <!-- Modern "Z" Letter Overlay at Bottom-Right / Brand Accent -->
-    <path d="M375 140 L430 140 L385 200 L435 200" stroke="#38bdf8" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Subtle Emerald Inner Border Ring -->
+  <rect x="2.5" y="2.5" width="507" height="507" rx="110" stroke="url(#emeraldGrad)" stroke-width="3" stroke-opacity="0.4" fill="none" />
+
+  <!-- Monogram "ZC" -->
+  <g filter="url(#monogramShadow)">
+    <text x="256" y="318" 
+          text-anchor="middle" 
+          font-family="'Impact', 'Segoe UI Black', 'Arial Black', -apple-system, sans-serif" 
+          font-weight="900" 
+          font-style="italic" 
+          font-size="196" 
+          fill="url(#textGrad)" 
+          letter-spacing="2">ZC</text>
   </g>
+
+  <!-- Emerald Dynamic Accent Bar -->
+  <rect x="166" y="358" width="180" height="7" rx="3.5" fill="url(#emeraldGrad)" filter="url(#emeraldGlow)" />
+
+  <!-- Subtitle "ZEDCONSIGN" -->
+  <text x="256" y="405" 
+        text-anchor="middle" 
+        font-family="'Inter', 'Segoe UI', -apple-system, Arial, sans-serif" 
+        font-weight="800" 
+        font-size="19" 
+        fill="#94a3b8" 
+        letter-spacing="8">ZEDCONSIGN</text>
 </svg>
