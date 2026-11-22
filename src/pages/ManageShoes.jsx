@@ -139,7 +139,7 @@ function ManageShoes({ shoes, onAddShoe, onUpdateShoe, onDeleteShoe, onResetDefa
         <div className="crud-title-group">
           <h1>Kelola Inventaris &amp; Katalog Sepatu</h1>
           <p>
-            Modul Manajemen CRUD Fungsional (Create, Read, Update, Delete) dengan penyimpanan lokal offline.
+            Manajemen inventaris dan katalog sepatu secara real-time dengan sinkronisasi lokal dan cloud.
           </p>
         </div>
 
@@ -251,7 +251,7 @@ function ManageShoes({ shoes, onAddShoe, onUpdateShoe, onDeleteShoe, onResetDefa
               <th>Kondisi</th>
               <th>Harga</th>
               <th>Stok</th>
-              <th style={{ textAlign: 'center' }}>Aksi (CRUD)</th>
+              <th style={{ textAlign: 'center' }}>Aksi</th>
             </tr>
           </thead>
           <tbody>

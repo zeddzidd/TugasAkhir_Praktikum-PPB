@@ -322,7 +322,7 @@ function ConsignInfo({ onAddShoe, onNavigateCatalog, onNavigateManage }) {
                 className="btn-secondary"
                 onClick={onNavigateManage}
               >
-                Buka Kelola Inventaris Sepatu (CRUD)
+                Buka Kelola Inventaris Sepatu
               </button>
             )}
           </div>

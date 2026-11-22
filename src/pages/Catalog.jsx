@@ -267,7 +267,7 @@ function Catalog({
             type="button"
             className="btn-manage-quick"
             onClick={onNavigateManage}
-            title="Kelola & Tambah Sepatu (CRUD Fungsional)"
+            title="Kelola & Tambah Sepatu"
           >
             + Kelola Sepatu
           </button>

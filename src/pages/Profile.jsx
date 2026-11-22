@@ -272,7 +272,7 @@ function Profile({ onNavigateManage, onAuthChange }) {
               className="btn-manage-shoes-link"
               onClick={onNavigateManage}
             >
-              📦 Buka Kelola Sepatu (CRUD)
+              📦 Buka Kelola Sepatu
             </button>
 
             <button

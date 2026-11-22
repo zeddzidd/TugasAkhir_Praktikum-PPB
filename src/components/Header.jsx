@@ -125,9 +125,8 @@ function Header({
               type="button"
               className={`header-nav-link ${activeTab === 'manage' ? 'active' : ''}`}
               onClick={() => onSelectTab('manage')}
-              title="Kelola Data Sepatu (CRUD Tugas Akhir PPB)"
+              title="Kelola Data Sepatu"
             >
-              <span className="crud-pill-badge">CRUD</span>
               Kelola
             </button>
 
@@ -266,7 +265,7 @@ function Header({
             <path d="M12 20h9" />
             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
           </svg>
-          <span>CRUD</span>
+          <span>Kelola</span>
         </button>
 
         <button

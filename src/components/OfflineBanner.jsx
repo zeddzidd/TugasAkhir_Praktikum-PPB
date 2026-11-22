@@ -40,7 +40,7 @@ function OfflineBanner() {
         <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
         <line x1="12" y1="20" x2="12.01" y2="20" />
       </svg>
-      <span>Anda sedang dalam <strong>Mode Offline</strong>. Data katalog &amp; CRUD tetap dapat diakses via cache lokal PWA.</span>
+      <span>Anda sedang dalam <strong>Mode Offline</strong>. Data katalog &amp; inventaris tetap dapat diakses via cache lokal PWA.</span>
       <span className="offline-badge">Offline PWA</span>
     </div>
   )
