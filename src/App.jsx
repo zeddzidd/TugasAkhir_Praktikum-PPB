@@ -130,6 +130,8 @@ function App() {
             onSelectSubNav={setSelectedSubNav}
             onNavigateManage={() => handleSelectTab('manage')}
             onNavigateConsign={() => handleSelectTab('consign')}
+            currentUser={currentUser}
+            onOpenAuth={(mode) => setAuthModalMode(mode || 'login')}
           />
         )}
         {tab === 'manage' && (

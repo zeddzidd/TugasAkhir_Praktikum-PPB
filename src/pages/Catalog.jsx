@@ -11,6 +11,8 @@ function Catalog({
   onSelectSubNav,
   onNavigateManage,
   onNavigateConsign,
+  currentUser,
+  onOpenAuth,
 }) {
   const [selectedCategory, setSelectedCategory] = useState('Semua')
   const [sortBy, setSortBy] = useState('default')
@@ -367,6 +369,8 @@ function Catalog({
           shoe={activeShoe}
           onClose={() => setActiveShoe(null)}
           onNavigateConsign={onNavigateConsign}
+          currentUser={currentUser}
+          onOpenAuth={onOpenAuth}
         />
       )}
     </div>
