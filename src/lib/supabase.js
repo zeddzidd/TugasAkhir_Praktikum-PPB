@@ -1,14 +1,18 @@
 import { createClient } from '@supabase/supabase-js'
 
+const activeUrl = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_SUPABASE_URL : null
+const activeKey = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_SUPABASE_ANON_KEY : null
+
+// Pastikan selalu menggunakan URL & Key project aktif pkyghvhifthnxlrzfpoc
 const supabaseUrl =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) ||
-  (typeof import.meta !== 'undefined' && import.meta.env?.NEXT_PUBLIC_SUPABASE_URL) ||
-  'https://pkyghvhifthnxlrzfpoc.supabase.co'
+  activeUrl && !activeUrl.includes('wywiqcisdeesfopvvfse')
+    ? activeUrl
+    : 'https://pkyghvhifthnxlrzfpoc.supabase.co'
 
 const supabaseAnonKey =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) ||
-  (typeof import.meta !== 'undefined' && import.meta.env?.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) ||
-  'sb_publishable_Ve1pH-WiP9eR0RW8wKG-lA_oaa9LcG7'
+  activeKey && !activeKey.includes('6bywVOvNvY6duH2KloZgnA')
+    ? activeKey
+    : 'sb_publishable_Ve1pH-WiP9eR0RW8wKG-lA_oaa9LcG7'
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&
@@ -158,7 +162,7 @@ export async function signUpUser({ email, password, fullName, phone = '' }) {
   // 3. Masukkan data LANGSUNG ke tabel Supabase 'users' dan 'profiles'
   if (isSupabaseConfigured && supabase) {
     try {
-      await supabase.from('users').upsert({
+      const { error: userErr } = await supabase.from('users').upsert({
         id: userId,
         full_name: cleanName,
         email: normalizedEmail,
@@ -167,12 +171,15 @@ export async function signUpUser({ email, password, fullName, phone = '' }) {
         role: 'consignor',
         created_at: new Date().toISOString(),
       })
+      if (userErr) {
+        console.error('Supabase users upsert error:', userErr.message)
+      }
     } catch (err) {
       console.warn('Direct insert to Supabase users table warning:', err)
     }
 
     try {
-      await supabase.from('profiles').upsert({
+      const { error: profErr } = await supabase.from('profiles').upsert({
         id: userId,
         full_name: cleanName,
         email: normalizedEmail,
@@ -180,6 +187,9 @@ export async function signUpUser({ email, password, fullName, phone = '' }) {
         role: 'consignor',
         updated_at: new Date().toISOString(),
       })
+      if (profErr) {
+        console.error('Supabase profiles upsert error:', profErr.message)
+      }
     } catch (err) {
       console.warn('Direct insert to Supabase profiles table warning:', err)
     }
