@@ -166,9 +166,11 @@ export async function signUpUser({ email, password, fullName, phone = '' }) {
             `Akun dengan email '${normalizedEmail}' sudah terdaftar di database Supabase! Anda tidak dapat mendaftar lagi dengan email yang sama. Silakan masuk (login).`
           )
         }
-        // Jika limit email SMTP Supabase tercapai, jangan crash; lanjutkan simpan ke database aplikasi
+        // Jika limit email SMTP Supabase tercapai (rate limit default Supabase free = 3 email/jam)
         if (error.status === 429 || errMsg.includes('rate limit')) {
-          console.warn('Supabase email rate limit reached, continuing with persistent local database.')
+          throw new Error(
+            'Limit email verifikasi Supabase tercapai (maks 3 email/jam). Harap matikan opsi "Confirm email" di Dashboard Supabase (Authentication -> Providers -> Email -> matikan "Confirm email" -> klik Save), lalu daftar kembali agar akun langsung masuk ke database Supabase!'
+          )
         } else {
           throw error
         }
@@ -454,4 +456,138 @@ export async function updateUserProfile(userId, { fullName, phone }) {
     setLocalSession(session)
   }
   return session
+}
+
+// -----------------------------------------------------------------------------
+// Shoes Catalog Supabase Sync API
+// -----------------------------------------------------------------------------
+
+/**
+ * Fetch shoes from Supabase database
+ */
+export async function fetchShoesFromSupabase() {
+  if (!isSupabaseConfigured || !supabase) return null
+  try {
+    const { data, error } = await supabase
+      .from('shoes')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) {
+      console.warn('Shoes table not yet initialized in Supabase:', error.message)
+      return null
+    }
+    if (Array.isArray(data) && data.length > 0) {
+      return data.map((item) => ({
+        id: item.id,
+        name: item.name,
+        colorway: item.colorway || '',
+        brand: item.brand,
+        category: item.category,
+        size: item.size,
+        condition: item.condition,
+        price: Number(item.price),
+        image: item.image || (Array.isArray(item.images) && item.images[0]) || '/shoes/dunk-low.svg',
+        images: Array.isArray(item.images) && item.images.length > 0
+          ? item.images
+          : [item.image || '/shoes/dunk-low.svg'],
+        consignor: item.consignor || 'ZedConsign Verified Seller',
+        stock: Number(item.stock) || 1,
+        isFeatured: Boolean(item.is_featured),
+        isExpress: Boolean(item.is_express),
+        description: item.description || '',
+      }))
+    }
+    return null
+  } catch (e) {
+    console.warn('Error fetching shoes from Supabase:', e)
+    return null
+  }
+}
+
+/**
+ * Upsert or insert shoe to Supabase database
+ */
+export async function syncShoeToSupabase(shoe) {
+  if (!isSupabaseConfigured || !supabase) return
+  try {
+    const primaryImg = (Array.isArray(shoe.images) && shoe.images[0]) || shoe.image || '/shoes/dunk-low.svg'
+    const finalImgs = Array.isArray(shoe.images) && shoe.images.length > 0 ? shoe.images : [primaryImg]
+
+    await supabase.from('shoes').upsert({
+      id: shoe.id,
+      name: shoe.name,
+      colorway: shoe.colorway || '',
+      brand: shoe.brand,
+      category: shoe.category,
+      size: shoe.size,
+      condition: shoe.condition,
+      price: Number(shoe.price),
+      image: primaryImg,
+      images: finalImgs,
+      description: shoe.description || '',
+      consignor: shoe.consignor || 'ZedConsign Verified Seller',
+      stock: Number(shoe.stock) || 1,
+      is_featured: Boolean(shoe.isFeatured),
+      is_express: Boolean(shoe.isExpress),
+    })
+  } catch (err) {
+    console.warn('Failed to sync shoe to Supabase:', err)
+  }
+}
+
+/**
+ * Delete shoe from Supabase database
+ */
+export async function deleteShoeFromSupabase(shoeId) {
+  if (!isSupabaseConfigured || !supabase) return
+  try {
+    await supabase.from('shoes').delete().eq('id', shoeId)
+  } catch (err) {
+    console.warn('Failed to delete shoe from Supabase:', err)
+  }
+}
+
+/**
+ * Bulk sync all shoes into Supabase database
+ */
+export async function syncAllShoesToSupabase(shoesList) {
+  if (!isSupabaseConfigured || !supabase || !Array.isArray(shoesList)) {
+    return { success: false, message: 'Supabase client belum terhubung' }
+  }
+  try {
+    const formatted = shoesList.map((shoe) => {
+      const primaryImg =
+        (Array.isArray(shoe.images) && shoe.images[0]) || shoe.image || '/shoes/dunk-low.svg'
+      const finalImgs =
+        Array.isArray(shoe.images) && shoe.images.length > 0 ? shoe.images : [primaryImg]
+
+      return {
+        id: String(shoe.id),
+        name: shoe.name,
+        colorway: shoe.colorway || '',
+        brand: shoe.brand,
+        category: shoe.category,
+        size: shoe.size,
+        condition: shoe.condition,
+        price: Number(shoe.price),
+        image: primaryImg,
+        images: finalImgs,
+        description: shoe.description || '',
+        consignor: shoe.consignor || 'ZedConsign Verified Seller',
+        stock: Number(shoe.stock) || 1,
+        is_featured: Boolean(shoe.isFeatured),
+        is_express: Boolean(shoe.isExpress),
+      }
+    })
+
+    const { error } = await supabase.from('shoes').upsert(formatted)
+    if (error) {
+      console.warn('Sync all shoes warning:', error.message)
+      return { success: false, message: error.message }
+    }
+    return { success: true, count: formatted.length }
+  } catch (err) {
+    console.warn('Sync all shoes error:', err)
+    return { success: false, message: err.message }
+  }
 }

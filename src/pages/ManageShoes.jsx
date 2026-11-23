@@ -32,6 +32,7 @@ function ManageShoes({
   onUpdateShoe,
   onDeleteShoe,
   onResetDefault,
+  onSyncSupabase,
   currentUser,
   onOpenAuth,
 }) {
@@ -41,6 +42,8 @@ function ManageShoes({
   const [deleteCandidate, setDeleteCandidate] = useState(null)
   const [formData, setFormData] = useState(INITIAL_FORM)
   const [errorMsg, setErrorMsg] = useState('')
+  const [syncFeedback, setSyncFeedback] = useState(null)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   // Calculate statistics
   const totalItems = shoes.length
@@ -148,6 +151,33 @@ function ManageShoes({
     }
   }
 
+  const handleTriggerSync = async () => {
+    if (!onSyncSupabase) return
+    setIsSyncing(true)
+    setSyncFeedback(null)
+    try {
+      const res = await onSyncSupabase()
+      if (res && res.success) {
+        setSyncFeedback({
+          type: 'success',
+          text: `Berhasil menyinkronkan ${res.count} sepatu ke tabel "shoes" di Supabase Cloud!`,
+        })
+      } else {
+        setSyncFeedback({
+          type: 'error',
+          text: `Gagal sinkron: ${res?.message || 'Pastikan script schema.sql sudah dijalankan di Supabase SQL Editor.'}`,
+        })
+      }
+    } catch (e) {
+      setSyncFeedback({
+        type: 'error',
+        text: `Error sinkron: ${e.message}`,
+      })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
   return (
     <div>
       {/* Guest Banner if not logged in */}
@@ -193,6 +223,17 @@ function ManageShoes({
           <button
             type="button"
             className="btn-secondary"
+            onClick={handleTriggerSync}
+            disabled={isSyncing}
+            title="Kirim dan sinkronkan semua sepatu lokal ke tabel database Supabase"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            {isSyncing ? '⏳ Menyinkronkan...' : '⚡ Sinkronkan ke Supabase'}
+          </button>
+
+          <button
+            type="button"
+            className="btn-secondary"
             onClick={() => {
               if (window.confirm('Reset semua data ke katalog sampel bawaan praktikum?')) {
                 onResetDefault()
@@ -204,6 +245,34 @@ function ManageShoes({
           </button>
         </div>
       </div>
+
+      {/* Sync Feedback Message */}
+      {syncFeedback && (
+        <div
+          style={{
+            padding: '12px 16px',
+            marginBottom: '20px',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: '600',
+            backgroundColor: syncFeedback.type === 'success' ? '#ecfdf5' : '#fef2f2',
+            color: syncFeedback.type === 'success' ? '#065f46' : '#991b1b',
+            border: `1px solid ${syncFeedback.type === 'success' ? '#a7f3d0' : '#fecaca'}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <span>{syncFeedback.text}</span>
+          <button
+            type="button"
+            onClick={() => setSyncFeedback(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', color: 'inherit' }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Quick Summary Cards */}
       <div

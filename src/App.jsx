@@ -9,7 +9,13 @@ import ManageShoes from './pages/ManageShoes.jsx'
 import ConsignInfo from './pages/ConsignInfo.jsx'
 import Profile from './pages/Profile.jsx'
 import { DEFAULT_SHOES } from './data/shoes.js'
-import { getCurrentSession } from './lib/supabase.js'
+import {
+  getCurrentSession,
+  fetchShoesFromSupabase,
+  syncShoeToSupabase,
+  deleteShoeFromSupabase,
+  syncAllShoesToSupabase,
+} from './lib/supabase.js'
 import './App.css'
 
 const STORAGE_KEY = 'zedconsign_shoes_catalog_v3'
@@ -61,6 +67,21 @@ function App() {
     return DEFAULT_SHOES
   })
 
+  // Synchronize with remote Supabase database on launch
+  useEffect(() => {
+    async function loadShoesFromDb() {
+      try {
+        const remoteShoes = await fetchShoesFromSupabase()
+        if (remoteShoes && remoteShoes.length > 0) {
+          setShoes(remoteShoes)
+        }
+      } catch (err) {
+        console.warn('Supabase shoe sync error:', err)
+      }
+    }
+    loadShoesFromDb()
+  }, [])
+
   // Persist shoes to localStorage
   useEffect(() => {
     try {
@@ -88,19 +109,22 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // CRUD Actions
+  // CRUD Actions connected to both React State & Supabase
   const handleAddShoe = (newShoe) => {
     setShoes((prev) => [newShoe, ...prev])
+    syncShoeToSupabase(newShoe)
   }
 
   const handleUpdateShoe = (updatedShoe) => {
     setShoes((prev) =>
       prev.map((item) => (item.id === updatedShoe.id ? updatedShoe : item))
     )
+    syncShoeToSupabase(updatedShoe)
   }
 
   const handleDeleteShoe = (shoeId) => {
     setShoes((prev) => prev.filter((item) => item.id !== shoeId))
+    deleteShoeFromSupabase(shoeId)
   }
 
   const handleResetDefault = () => {
@@ -110,6 +134,11 @@ function App() {
     } catch (e) {
       console.error(e)
     }
+    syncAllShoesToSupabase(DEFAULT_SHOES)
+  }
+
+  const handleManualSyncSupabase = async () => {
+    return await syncAllShoesToSupabase(shoes)
   }
 
   return (
@@ -148,6 +177,7 @@ function App() {
             onUpdateShoe={handleUpdateShoe}
             onDeleteShoe={handleDeleteShoe}
             onResetDefault={handleResetDefault}
+            onSyncSupabase={handleManualSyncSupabase}
             currentUser={currentUser}
             onOpenAuth={(mode) => setAuthModalMode(mode || 'login')}
           />
