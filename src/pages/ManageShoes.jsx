@@ -19,8 +19,8 @@ const INITIAL_FORM = {
   size: 'US 9 / EU 42.5',
   condition: 'Brand New In Box (BNIB)',
   price: '',
-  image: '/shoes/dunk-low.svg',
-  images: ['/shoes/dunk-low.svg'],
+  image: '',
+  images: [],
   stock: 1,
   consignor: 'ZedConsign Verified Seller',
   description: '',
@@ -613,13 +613,13 @@ function ManageShoes({
 
               <div className="form-group">
                 <ImageUploader
-                  images={formData.images || [formData.image || '/shoes/dunk-low.svg']}
+                  images={formData.images || []}
                   maxPhotos={8}
                   onChange={(newImgs) =>
                     setFormData({
                       ...formData,
                       images: newImgs,
-                      image: newImgs[0] || '/shoes/dunk-low.svg',
+                      image: newImgs[0] || '',
                     })
                   }
                 />

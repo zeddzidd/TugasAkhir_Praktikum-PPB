@@ -22,7 +22,7 @@ function ConsignInfo({
   const [size, setSize] = useState('US 9 / EU 42.5')
   const [condition, setCondition] = useState('Brand New In Box (BNIB)')
   const [price, setPrice] = useState('')
-  const [images, setImages] = useState(['/shoes/dunk-low.svg'])
+  const [images, setImages] = useState([])
   const [consignor, setConsignor] = useState('')
   const [description, setDescription] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
@@ -63,8 +63,13 @@ function ConsignInfo({
       return
     }
 
-    const primaryImage = images[0] || '/shoes/dunk-low.svg'
-    const finalImages = images.length > 0 ? images : [primaryImage]
+    if (!images || images.length === 0) {
+      setErrorMessage('Mohon pilih dan unggah minimal 1 foto sepatu Anda!')
+      return
+    }
+
+    const primaryImage = images[0]
+    const finalImages = images
 
     const newShoe = {
       id: `consign-${Date.now()}`,
@@ -92,7 +97,7 @@ function ConsignInfo({
     setPrice('')
     setDescription('')
     setConsignor('')
-    setImages(['/shoes/dunk-low.svg'])
+    setImages([])
   }
 
   return (

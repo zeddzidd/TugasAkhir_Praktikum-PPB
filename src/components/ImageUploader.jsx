@@ -23,14 +23,15 @@ const PHOTO_SUGGESTIONS = [
 ]
 
 function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
-  // Normalize current images list from props
-  const currentImages = Array.isArray(images) && images.length > 0
+  // Normalize current images: Bersih dan kosong jika belum ada foto, tanpa cover bawaan
+  const rawList = Array.isArray(images)
     ? images
-    : Array.isArray(value) && value.length > 0
+    : Array.isArray(value)
     ? value
     : typeof value === 'string' && value
     ? [value]
     : []
+  const currentImages = rawList.filter((img) => img && !img.includes('dunk-low.svg'))
 
   const [tab, setTab] = useState('upload')
   const [urlInput, setUrlInput] = useState('')
@@ -44,72 +45,85 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
     setTimeout(() => setStatusNotice(''), 4000)
   }
 
-  // Compress & convert a file to lightweight Base64 (mobile-safe)
+  // Compress & convert file using URL.createObjectURL (sangat cepat, hemat RAM di HP, no memory leak)
   const compressFile = (file) => {
     return new Promise((resolve) => {
-      // Timeout pengaman jika file HEIC / kamera berat di HP
+      let objectUrl = null
+      try {
+        objectUrl = URL.createObjectURL(file)
+      } catch {
+        objectUrl = null
+      }
+
+      // Timeout pengaman jika file gagal didecode di HP
       const timer = setTimeout(() => {
+        if (objectUrl) URL.revokeObjectURL(objectUrl)
         resolve(null)
-      }, 8000)
+      }, 7000)
 
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const rawData = e.target?.result
-        if (!rawData || typeof rawData !== 'string') {
-          clearTimeout(timer)
-          return resolve(null)
-        }
-
-        const img = new Image()
-        img.onload = () => {
-          clearTimeout(timer)
-          try {
-            const maxDim = 640 // Resolusi optimal agar ringan di HP dan muat di localStorage
-            let width = img.width
-            let height = img.height
-
-            if (width > maxDim || height > maxDim) {
-              if (width > height) {
-                height = Math.round((height * maxDim) / width)
-                width = maxDim
-              } else {
-                width = Math.round((width * maxDim) / height)
-                height = maxDim
-              }
-            }
-
-            const canvas = document.createElement('canvas')
-            canvas.width = Math.max(1, width)
-            canvas.height = Math.max(1, height)
-            const ctx = canvas.getContext('2d')
-            if (!ctx) {
-              return resolve(rawData.length < 400000 ? rawData : null)
-            }
-
-            // Latar putih jika foto transparan
-            ctx.fillStyle = '#FFFFFF'
-            ctx.fillRect(0, 0, width, height)
-            ctx.drawImage(img, 0, 0, width, height)
-
-            const compressed = canvas.toDataURL('image/jpeg', 0.76)
-            resolve(compressed)
-          } catch (canvasErr) {
-            console.warn('Canvas error, fallback ke data asli:', canvasErr)
-            resolve(rawData.length < 400000 ? rawData : null)
-          }
-        }
-        img.onerror = () => {
-          clearTimeout(timer)
-          // Jika browser HP gagal decode langsung (misal HEIC mentah), coba fallback jika ukuran aman
-          resolve(rawData.length < 400000 ? rawData : null)
-        }
-        img.src = rawData
-      }
-      reader.onerror = () => {
+      const img = new Image()
+      img.onload = () => {
         clearTimeout(timer)
-        resolve(null)
+        try {
+          const maxDim = 600 // Resolusi ideal: jernih di layar HP dan hemat kuota/localStorage
+          let width = img.naturalWidth || img.width
+          let height = img.naturalHeight || img.height
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width)
+              width = maxDim
+            } else {
+              width = Math.round((width * maxDim) / height)
+              height = maxDim
+            }
+          }
+
+          const canvas = document.createElement('canvas')
+          canvas.width = Math.max(1, width)
+          canvas.height = Math.max(1, height)
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            if (objectUrl) URL.revokeObjectURL(objectUrl)
+            return resolve(null)
+          }
+
+          ctx.fillStyle = '#FFFFFF'
+          ctx.fillRect(0, 0, width, height)
+          ctx.drawImage(img, 0, 0, width, height)
+
+          const compressed = canvas.toDataURL('image/jpeg', 0.74)
+          if (objectUrl) URL.revokeObjectURL(objectUrl)
+          resolve(compressed)
+        } catch (canvasErr) {
+          console.warn('Canvas error:', canvasErr)
+          if (objectUrl) URL.revokeObjectURL(objectUrl)
+          resolve(null)
+        }
       }
-      reader.readAsDataURL(file)
+
+      img.onerror = () => {
+        clearTimeout(timer)
+        if (objectUrl) URL.revokeObjectURL(objectUrl)
+        // Fallback FileReader jika createObjectURL terkendala
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const raw = e.target?.result
+          resolve(typeof raw === 'string' && raw.length < 500000 ? raw : null)
+        }
+        reader.onerror = () => resolve(null)
+        reader.readAsDataURL(file)
+      }
+
+      if (objectUrl) {
+        img.src = objectUrl
+      } else {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          img.src = e.target.result
+        }
+        reader.readAsDataURL(file)
+      }
     })
   }
 
@@ -117,10 +131,8 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
   const handleFiles = async (filesList) => {
     if (!filesList || filesList.length === 0) return
 
-    // Jika gambar yang ada saat ini hanya placeholder bawaan 'dunk-low.svg', gantikan langsung
-    const isPlaceholderOnly =
-      currentImages.length === 1 && currentImages[0].includes('dunk-low.svg')
-    const baseImages = isPlaceholderOnly ? [] : currentImages
+    // Bersihkan placeholder apapun agar tidak ada cover lain yang menahan slot
+    const baseImages = currentImages.filter((img) => img && !img.includes('dunk-low.svg'))
 
     const availableSlots = maxPhotos - baseImages.length
     if (availableSlots <= 0) {
@@ -129,14 +141,13 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
     }
 
     setIsProcessing(true)
-    setProcessingStatus('Menyiapkan berkas foto dari HP...')
+    setProcessingStatus('Menyiapkan foto dari HP...')
 
-    // Validasi file gambar fleksibel (mendukung JPG, PNG, WEBP, HEIC dari kamera iPhone)
+    // Validasi file fleksibel untuk HP
     const isImageFile = (f) => {
       if (f.type && (f.type.startsWith('image/') || f.type.includes('heic') || f.type.includes('heif'))) return true
       if (f.name && f.name.match(/\.(jpe?g|png|webp|heic|heif|gif|svg|bmp)$/i)) return true
-      // Fallback kamera iPhone di mana MIME type terkadang kosong
-      if (!f.type && f.size > 0 && f.size < 25 * 1024 * 1024) return true
+      if (!f.type && f.size > 0 && f.size < 35 * 1024 * 1024) return true // iOS Gallery camera pick
       return false
     }
 
@@ -145,40 +156,35 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
     if (validFiles.length === 0) {
       setIsProcessing(false)
       setProcessingStatus('')
-      showNotice('Format foto tidak terbaca. Harap pilih foto PNG, JPG, JPEG, WEBP, atau foto kamera HP.')
+      showNotice('Format berkas tidak terbaca. Harap pilih foto PNG, JPG, JPEG, atau WEBP.')
       return
     }
 
     const filesToProcess = validFiles.slice(0, availableSlots)
     if (validFiles.length > availableSlots) {
-      showNotice(`Menambahkan ${availableSlots} foto sekaligus (maksimal ${maxPhotos} foto).`)
+      showNotice(`Memproses ${availableSlots} foto (maksimal ${maxPhotos} foto tercapai).`)
     }
 
     try {
-      // Proses satu per satu secara sekuensial agar tidak memicu memory leak di HP
       const validResults = []
       for (let i = 0; i < filesToProcess.length; i++) {
         setProcessingStatus(`Memproses foto ${i + 1} dari ${filesToProcess.length}...`)
-        try {
-          const res = await compressFile(filesToProcess[i])
-          if (res) {
-            validResults.push(res)
-          }
-        } catch (compErr) {
-          console.warn('Gagal kompres foto ke-' + (i + 1), compErr)
+        const res = await compressFile(filesToProcess[i])
+        if (res) {
+          validResults.push(res)
         }
       }
 
       if (validResults.length > 0) {
         const updated = [...baseImages, ...validResults]
         onChange(updated, updated[0] || '')
-        showNotice(`✓ Berhasil menambahkan ${validResults.length} foto sekaligus tanpa error!`)
+        showNotice(`✓ Berhasil menambahkan ${validResults.length} foto sekaligus!`)
       } else {
-        showNotice('Gagal memproses foto. Silakan coba lagi.')
+        showNotice('Gagal memproses foto. Silakan coba pilih foto lain.')
       }
     } catch (err) {
-      console.error('Gagal memproses gambar:', err)
-      showNotice('Gagal mengunggah foto: ' + (err.message || 'Error tidak diketahui'))
+      console.error('Error proses foto:', err)
+      showNotice('Gagal mengunggah foto.')
     } finally {
       setIsProcessing(false)
       setProcessingStatus('')
@@ -246,9 +252,9 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
     onChange(updated, target)
   }
 
-  // Reset all
+  // Reset all (dikosongkan total tanpa cover tiruan)
   const handleResetAll = () => {
-    onChange(['/shoes/dunk-low.svg'], '/shoes/dunk-low.svg')
+    onChange([], '')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -486,77 +492,109 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
       <div className="iu-gallery-section">
         <div className="iu-gallery-title-bar">
           <span className="iu-gallery-title">
-            Daftar Foto yang Siap Ditampilkan ({currentImages.length} Foto)
+            Daftar Foto Sepatu yang Dipilih ({currentImages.length} / {maxPhotos} Foto)
           </span>
-          <span className="iu-gallery-hint">
-            Foto pertama otomatis menjadi <strong>Foto Utama (Cover)</strong>
-          </span>
-        </div>
-
-        <div className="iu-slots-grid">
-          {currentImages.map((imgUri, index) => (
-            <div key={`${index}-${imgUri.slice(0, 24)}`} className={`iu-slot-card ${index === 0 ? 'is-cover' : ''}`}>
-              <div className="iu-slot-img-wrap">
-                <img
-                  src={imgUri}
-                  alt={`Detail Foto ${index + 1}`}
-                  className="iu-slot-img"
-                  onError={(e) => {
-                    e.target.onerror = null
-                    e.target.src = '/shoes/dunk-low.svg'
-                  }}
-                />
-
-                {index === 0 ? (
-                  <span className="iu-badge-cover">⭐ Cover</span>
-                ) : (
-                  <span className="iu-badge-index">#{index + 1}</span>
-                )}
-
-                <button
-                  type="button"
-                  className="iu-btn-delete"
-                  onClick={() => handleRemovePhoto(index)}
-                  title="Hapus foto ini"
-                  aria-label="Hapus foto"
-                >
-                  &times;
-                </button>
-              </div>
-
-              <div className="iu-slot-footer">
-                <span className="iu-slot-tag">
-                  {PHOTO_SUGGESTIONS[index] ? PHOTO_SUGGESTIONS[index].replace(/^\d+\.\s*/, '') : `Sudut ${index + 1}`}
-                </span>
-
-                {index > 0 && (
-                  <button
-                    type="button"
-                    className="iu-btn-make-cover"
-                    onClick={() => handleMakeCover(index)}
-                    title="Jadikan sebagai foto utama (cover)"
-                  >
-                    Jadikan Cover
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {/* Add More Slot (if under maxPhotos) */}
-          {currentImages.length < maxPhotos && (
-            <button
-              type="button"
-              className="iu-slot-add-btn"
-              onClick={() => fileInputRef.current?.click()}
-              title={`Tambah foto lagi (Tersisa ${maxPhotos - currentImages.length} slot)`}
-            >
-              <div className="iu-add-icon">+</div>
-              <span className="iu-add-text">Tambah Foto</span>
-              <span className="iu-add-sub">Slot {currentImages.length + 1} dari {maxPhotos}</span>
-            </button>
+          {currentImages.length > 0 && (
+            <span className="iu-gallery-hint">
+              Foto pertama otomatis menjadi <strong>Foto Utama (Cover)</strong>
+            </span>
           )}
         </div>
+
+        {currentImages.length === 0 ? (
+          <div
+            style={{
+              padding: '32px 16px',
+              textAlign: 'center',
+              border: '2px dashed #cbd5e1',
+              borderRadius: '12px',
+              color: 'var(--text-dim)',
+              background: '#f8fafc',
+              marginTop: '12px',
+            }}
+          >
+            <div style={{ fontSize: '36px', marginBottom: '8px' }}>📷</div>
+            <strong style={{ display: 'block', color: 'var(--text-main)', fontSize: '15px', marginBottom: '4px' }}>
+              Belum Ada Foto Sepatu yang Dipilih (Kosong)
+            </strong>
+            <p style={{ fontSize: '13px', margin: '0 auto 16px', maxWidth: '380px', lineHeight: '1.5' }}>
+              Tidak ada foto cover tiruan. Silakan pilih foto asli sepatu Anda dari galeri HP untuk mulai mengisi galeri.
+            </p>
+            <button
+              type="button"
+              className="btn-primary"
+              style={{ padding: '8px 20px', fontSize: '13px' }}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              + Pilih Foto dari Galeri HP
+            </button>
+          </div>
+        ) : (
+          <div className="iu-slots-grid">
+            {currentImages.map((imgUri, index) => (
+              <div key={`${index}-${imgUri.slice(0, 24)}`} className={`iu-slot-card ${index === 0 ? 'is-cover' : ''}`}>
+                <div className="iu-slot-img-wrap">
+                  <img
+                    src={imgUri}
+                    alt={`Detail Foto ${index + 1}`}
+                    className="iu-slot-img"
+                    onError={(e) => {
+                      e.target.onerror = null
+                      e.target.style.opacity = '0.5'
+                    }}
+                  />
+
+                  {index === 0 ? (
+                    <span className="iu-badge-cover">⭐ Cover</span>
+                  ) : (
+                    <span className="iu-badge-index">#{index + 1}</span>
+                  )}
+
+                  <button
+                    type="button"
+                    className="iu-btn-delete"
+                    onClick={() => handleRemovePhoto(index)}
+                    title="Hapus foto ini"
+                    aria-label="Hapus foto"
+                  >
+                    &times;
+                  </button>
+                </div>
+
+                <div className="iu-slot-footer">
+                  <span className="iu-slot-tag">
+                    {PHOTO_SUGGESTIONS[index] ? PHOTO_SUGGESTIONS[index].replace(/^\d+\.\s*/, '') : `Sudut ${index + 1}`}
+                  </span>
+
+                  {index > 0 && (
+                    <button
+                      type="button"
+                      className="iu-btn-make-cover"
+                      onClick={() => handleMakeCover(index)}
+                      title="Jadikan sebagai foto utama (cover)"
+                    >
+                      Jadikan Cover
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* Add More Slot (if under maxPhotos) */}
+            {currentImages.length < maxPhotos && (
+              <button
+                type="button"
+                className="iu-slot-add-btn"
+                onClick={() => fileInputRef.current?.click()}
+                title={`Tambah foto lagi (Tersisa ${maxPhotos - currentImages.length} slot)`}
+              >
+                <div className="iu-add-icon">+</div>
+                <span className="iu-add-text">Tambah Foto</span>
+                <span className="iu-add-sub">Slot {currentImages.length + 1} dari {maxPhotos}</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
