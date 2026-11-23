@@ -415,13 +415,31 @@ export async function getCurrentSession() {
  */
 export async function updateUserProfile(userId, { fullName, phone }) {
   if (isSupabaseConfigured && supabase) {
-    const { error } = await supabase.from('profiles').upsert({
-      id: userId,
-      full_name: fullName,
-      phone,
-      updated_at: new Date().toISOString(),
-    })
-    if (error) throw error
+    try {
+      await supabase
+        .from('users')
+        .update({
+          full_name: fullName,
+          phone,
+        })
+        .eq('id', userId)
+    } catch (e) {
+      console.warn('Update users table warning:', e)
+    }
+
+    try {
+      const { error } = await supabase.from('profiles').upsert({
+        id: userId,
+        full_name: fullName,
+        phone,
+        updated_at: new Date().toISOString(),
+      })
+      if (error) {
+        console.warn('Update profiles table warning:', error.message)
+      }
+    } catch (e) {
+      console.warn('Update profiles table exception:', e)
+    }
   }
 
   const session = getLocalSession()
