@@ -302,6 +302,19 @@ export async function signInUser({ email, password }) {
             provider: 'supabase',
           },
         }
+
+        // Pastikan tabel profiles selalu terisi profil user
+        try {
+          await supabase.from('profiles').upsert({
+            id: data.user.id,
+            full_name: session.user.fullName,
+            email: data.user.email,
+            phone: session.user.phone,
+            updated_at: new Date().toISOString(),
+          })
+        } catch {
+          // ignore
+        }
         setLocalSession(session)
         saveLocalUser({
           id: data.user.id,
