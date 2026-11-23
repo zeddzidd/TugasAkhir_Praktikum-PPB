@@ -25,6 +25,7 @@ function Profile({ onNavigateManage, onAuthChange }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editName, setEditName] = useState('')
   const [editPhone, setEditPhone] = useState('')
+  const [profileToast, setProfileToast] = useState('')
 
   // Load session on mount
   useEffect(() => {
@@ -133,11 +134,39 @@ function Profile({ onNavigateManage, onAuthChange }) {
         fullName: editName,
         phone: editPhone,
       })
-      setSession(updated)
-      if (onAuthChange) onAuthChange(updated.user)
+      if (updated) {
+        setSession(updated)
+        if (onAuthChange) onAuthChange(updated.user)
+      } else {
+        const fallback = {
+          ...session,
+          user: {
+            ...session.user,
+            fullName: editName,
+            phone: editPhone,
+          },
+        }
+        setSession(fallback)
+        if (onAuthChange) onAuthChange(fallback.user)
+      }
       setIsEditModalOpen(false)
+      setProfileToast('✓ Profil berhasil diperbarui!')
+      setTimeout(() => setProfileToast(''), 3500)
     } catch (err) {
-      alert('Gagal memperbarui profil: ' + err.message)
+      console.warn('Update profile error:', err)
+      const fallback = {
+        ...session,
+        user: {
+          ...session.user,
+          fullName: editName,
+          phone: editPhone,
+        },
+      }
+      setSession(fallback)
+      if (onAuthChange) onAuthChange(fallback.user)
+      setIsEditModalOpen(false)
+      setProfileToast('✓ Profil diperbarui secara lokal!')
+      setTimeout(() => setProfileToast(''), 3500)
     }
   }
 
@@ -349,6 +378,27 @@ function Profile({ onNavigateManage, onAuthChange }) {
                 </div>
               </form>
             </div>
+          </div>
+        )}
+
+        {profileToast && (
+          <div
+            style={{
+              position: 'fixed',
+              top: '24px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: '#047857',
+              color: '#ffffff',
+              padding: '12px 24px',
+              borderRadius: '9999px',
+              fontWeight: '700',
+              fontSize: '14px',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+              zIndex: 9999,
+            }}
+          >
+            {profileToast}
           </div>
         )}
       </div>

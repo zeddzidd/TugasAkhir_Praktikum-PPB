@@ -169,6 +169,7 @@ function App() {
             onNavigateConsign={() => handleSelectTab('consign')}
             currentUser={currentUser}
             onOpenAuth={(mode) => setAuthModalMode(mode || 'login')}
+            onAddShoe={handleAddShoe}
           />
         )}
         {tab === 'manage' && (

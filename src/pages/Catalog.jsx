@@ -1,7 +1,31 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import ShoeCard from '../components/ShoeCard.jsx'
 import ShoeModal from '../components/ShoeModal.jsx'
-import { CATEGORIES } from '../data/shoes.js'
+import ImageUploader from '../components/ImageUploader.jsx'
+import { CATEGORIES, formatRupiah } from '../data/shoes.js'
+
+const POPULAR_BRANDS = ['Nike', 'Jordan', 'Adidas', 'New Balance', 'Asics', 'Puma', 'Vans', 'Converse']
+const CONDITIONS = [
+  { id: 'Brand New In Box (BNIB)', label: 'BNIB', desc: 'Baru dalam boks' },
+  { id: 'Very Near Deadstock (VNDS)', label: 'VNDS', desc: 'Seperti baru 98%+' },
+  { id: 'Used (Kondisi Terawat)', label: 'Used', desc: 'Terawat' },
+]
+
+const INITIAL_ADD_FORM = {
+  name: '',
+  colorway: '',
+  brand: 'Nike',
+  category: 'Sneakers',
+  size: 'US 9 / EU 42.5',
+  condition: 'Brand New In Box (BNIB)',
+  price: '',
+  stock: 1,
+  isExpress: true,
+  isFeatured: true,
+  images: [],
+  consignor: '',
+  description: '',
+}
 
 function Catalog({
   shoes,
@@ -13,12 +37,19 @@ function Catalog({
   onNavigateConsign,
   currentUser,
   onOpenAuth,
+  onAddShoe,
 }) {
   const [selectedCategory, setSelectedCategory] = useState('Semua')
   const [sortBy, setSortBy] = useState('default')
   const [activeShoe, setActiveShoe] = useState(null)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+
+  // State untuk Modal Tambah Sepatu Baru langsung di Katalog
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [addFormData, setAddFormData] = useState(INITIAL_ADD_FORM)
+  const [addErrorMsg, setAddErrorMsg] = useState('')
+  const [addSuccessToast, setAddSuccessToast] = useState('')
 
   // Batasi hero banner carousel menjadi 5 slide teratas dari katalog
   const carouselShoes = useMemo(() => shoes.slice(0, 5), [shoes])
@@ -147,6 +178,69 @@ function Catalog({
   const currentHeroShoe = carouselShoes[safeSlide] || carouselShoes[0]
   const nextHeroShoe = carouselShoes[(safeSlide + 1) % carouselShoes.length]
 
+  const handleOpenAddModal = () => {
+    if (!currentUser) {
+      if (onOpenAuth) onOpenAuth('login')
+      return
+    }
+    setAddFormData({
+      ...INITIAL_ADD_FORM,
+      consignor: currentUser.fullName ? `${currentUser.fullName} (Consignor)` : 'ZedConsign Verified Seller',
+    })
+    setAddErrorMsg('')
+    setIsAddModalOpen(true)
+  }
+
+  const handleAddSubmit = (e) => {
+    e.preventDefault()
+    setAddErrorMsg('')
+
+    if (!addFormData.name.trim()) {
+      setAddErrorMsg('Mohon isi nama sepatu / model terlebih dahulu!')
+      return
+    }
+
+    const priceNum = Number(addFormData.price)
+    if (isNaN(priceNum) || priceNum <= 0) {
+      setAddErrorMsg('Harga jual harus berupa angka valid di atas Rp 0!')
+      return
+    }
+
+    if (!addFormData.images || addFormData.images.length === 0) {
+      setAddErrorMsg('Mohon unggah minimal 1 foto sepatu atau klik tombol "⚡ Isi Cepat 8 Foto"!')
+      return
+    }
+
+    const primaryImage = addFormData.images[0]
+    const finalImages = addFormData.images
+
+    const newShoe = {
+      id: `shoe-${Date.now()}`,
+      name: addFormData.name.trim(),
+      colorway: addFormData.colorway.trim() || addFormData.name.trim().toUpperCase(),
+      brand: addFormData.brand,
+      category: addFormData.category,
+      size: addFormData.size.trim(),
+      condition: addFormData.condition,
+      price: priceNum,
+      stock: Number(addFormData.stock) || 1,
+      isExpress: Boolean(addFormData.isExpress),
+      isFeatured: Boolean(addFormData.isFeatured),
+      image: primaryImage,
+      images: finalImages,
+      consignor: addFormData.consignor.trim() || (currentUser?.fullName || 'ZedConsign Verified Seller'),
+      description: addFormData.description.trim() || 'Sepatu autentik terverifikasi dari kurator ZedConsign Vault.',
+    }
+
+    if (onAddShoe) {
+      onAddShoe(newShoe)
+    }
+
+    setIsAddModalOpen(false)
+    setAddSuccessToast(`✓ Sepatu "${newShoe.name}" berhasil ditambahkan dan langsung tayang di katalog!`)
+    setTimeout(() => setAddSuccessToast(''), 4500)
+  }
+
   return (
     <div className="catalog-page-container">
       {/* Hero Banner Carousel (Exact match to Kick Avenue UI with Sliding Transition & Nav Chevrons) */}
@@ -267,11 +361,36 @@ function Catalog({
 
           <button
             type="button"
+            className="btn-add-shoe-catalog"
+            onClick={handleOpenAddModal}
+            title="Tambah sepatu baru langsung ke katalog"
+            style={{
+              background: 'linear-gradient(135deg, #0f172a 0%, #006b52 100%)',
+              color: '#ffffff',
+              fontSize: '13px',
+              fontWeight: '700',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              border: '1px solid rgba(0, 223, 162, 0.4)',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 4px 12px rgba(0, 107, 82, 0.25)',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <span style={{ fontSize: '15px' }}>✨</span>
+            <span>+ Tambah Sepatu</span>
+          </button>
+
+          <button
+            type="button"
             className="btn-manage-quick"
             onClick={onNavigateManage}
             title="Kelola & Tambah Sepatu"
           >
-            + Kelola Sepatu
+            Kelola Inventaris
           </button>
         </div>
       </section>
@@ -372,6 +491,496 @@ function Catalog({
           currentUser={currentUser}
           onOpenAuth={onOpenAuth}
         />
+      )}
+
+      {/* Toast Notification */}
+      {addSuccessToast && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'linear-gradient(135deg, #065f46 0%, #047857 100%)',
+            color: '#ffffff',
+            padding: '12px 24px',
+            borderRadius: '9999px',
+            fontWeight: '700',
+            fontSize: '14px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <span>✓</span>
+          <span>{addSuccessToast}</span>
+        </div>
+      )}
+
+      {/* Modal Tambah Sepatu Baru Super Elegan & Lengkap */}
+      {isAddModalOpen && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setIsAddModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9990,
+            padding: '16px',
+            overflowY: 'auto',
+          }}
+        >
+          <div
+            className="modal-window"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#ffffff',
+              borderRadius: '20px',
+              width: '100%',
+              maxWidth: '740px',
+              maxHeight: '92vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.35)',
+              border: '1px solid #e2e8f0',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '20px 24px',
+                borderBottom: '1px solid #e2e8f0',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              }}
+            >
+              <div>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: '800',
+                    color: '#006b52',
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    display: 'inline-block',
+                    marginBottom: '2px',
+                  }}
+                >
+                  ✨ ZEDCONSIGN CURATED CATALOG
+                </span>
+                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#0f172a' }}>
+                  Tambah Sepatu Baru ke Katalog
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '28px',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  lineHeight: '1',
+                }}
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <form onSubmit={handleAddSubmit} style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+              {addErrorMsg && (
+                <div
+                  style={{
+                    background: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    color: '#991b1b',
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    marginBottom: '20px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  <span>⚠️</span>
+                  <span>{addErrorMsg}</span>
+                </div>
+              )}
+
+              {/* CARD 1: Informasi Utama */}
+              <div
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '14px',
+                  padding: '18px',
+                  marginBottom: '20px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <span style={{ fontSize: '18px' }}>👟</span>
+                  <strong style={{ fontSize: '14px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    1. Identitas &amp; Spesifikasi Sepatu
+                  </strong>
+                </div>
+
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                    Nama Sepatu / Model *
+                  </label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Contoh: Air Jordan 1 Retro High OG Chicago"
+                    value={addFormData.name}
+                    onChange={(e) => setAddFormData({ ...addFormData, name: e.target.value })}
+                    required
+                    style={{ background: '#fff', fontSize: '14px' }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                    Colorway Resmi
+                  </label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Contoh: VARSITY RED / BLACK / WHITE"
+                    value={addFormData.colorway}
+                    onChange={(e) => setAddFormData({ ...addFormData, colorway: e.target.value })}
+                    style={{ background: '#fff', fontSize: '14px' }}
+                  />
+                </div>
+
+                {/* Brand Selector Pills */}
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '8px' }}>
+                    Pilih Brand / Produsen *
+                  </label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {POPULAR_BRANDS.map((b) => (
+                      <button
+                        key={b}
+                        type="button"
+                        onClick={() => setAddFormData({ ...addFormData, brand: b })}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '9999px',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          border: addFormData.brand === b ? '2px solid #006b52' : '1px solid #cbd5e1',
+                          background: addFormData.brand === b ? '#006b52' : '#ffffff',
+                          color: addFormData.brand === b ? '#ffffff' : '#334155',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {b}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Grid Kategori & Ukuran */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                      Kategori *
+                    </label>
+                    <select
+                      className="form-select"
+                      value={addFormData.category}
+                      onChange={(e) => setAddFormData({ ...addFormData, category: e.target.value })}
+                      style={{ background: '#fff' }}
+                    >
+                      {CATEGORIES.filter((c) => c !== 'Semua').map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                      Ukuran / Size (US / EU) *
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="US 9 / EU 42.5"
+                      value={addFormData.size}
+                      onChange={(e) => setAddFormData({ ...addFormData, size: e.target.value })}
+                      required
+                      style={{ background: '#fff' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Kondisi Pills */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '8px' }}>
+                    Kondisi Fisik Unit *
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px' }}>
+                    {CONDITIONS.map((c) => (
+                      <div
+                        key={c.id}
+                        onClick={() => setAddFormData({ ...addFormData, condition: c.id })}
+                        style={{
+                          border: addFormData.condition === c.id ? '2px solid #006b52' : '1px solid #cbd5e1',
+                          background: addFormData.condition === c.id ? '#ecfdf5' : '#ffffff',
+                          borderRadius: '10px',
+                          padding: '10px 12px',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <strong style={{ display: 'block', fontSize: '13px', color: addFormData.condition === c.id ? '#065f46' : '#1e293b' }}>
+                          {c.label}
+                        </strong>
+                        <small style={{ fontSize: '11px', color: '#64748b' }}>{c.desc}</small>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 2: Harga, Stok & Layanan Vault */}
+              <div
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '14px',
+                  padding: '18px',
+                  marginBottom: '20px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <span style={{ fontSize: '18px' }}>💰</span>
+                  <strong style={{ fontSize: '14px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    2. Harga, Stok &amp; Opsi Pengiriman
+                  </strong>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                      Harga Jual (Rupiah) *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      className="form-input"
+                      placeholder="Contoh: 2850000"
+                      value={addFormData.price}
+                      onChange={(e) => setAddFormData({ ...addFormData, price: e.target.value })}
+                      required
+                      style={{ background: '#fff', fontSize: '15px', fontWeight: '700' }}
+                    />
+                    {addFormData.price && Number(addFormData.price) > 0 && (
+                      <span style={{ display: 'block', marginTop: '4px', fontSize: '12px', fontWeight: '700', color: '#006b52' }}>
+                        Tampilan Harga: {formatRupiah(Number(addFormData.price))}
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                      Stok Unit *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      className="form-input"
+                      value={addFormData.stock}
+                      onChange={(e) => setAddFormData({ ...addFormData, stock: e.target.value })}
+                      required
+                      style={{ background: '#fff' }}
+                    />
+                  </div>
+                </div>
+
+                {/* 2 Toggle Option Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '12px',
+                      borderRadius: '10px',
+                      background: addFormData.isExpress ? '#fef3c7' : '#ffffff',
+                      border: addFormData.isExpress ? '1px solid #fde68a' : '1px solid #cbd5e1',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={addFormData.isExpress}
+                      onChange={(e) => setAddFormData({ ...addFormData, isExpress: e.target.checked })}
+                    />
+                    <div>
+                      <strong style={{ display: 'block', fontSize: '13px', color: '#92400e' }}>⚡ Express Ready</strong>
+                      <small style={{ fontSize: '11px', color: '#78350f' }}>Siap dikirim 1-2 hari dari Vault</small>
+                    </div>
+                  </label>
+
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '12px',
+                      borderRadius: '10px',
+                      background: addFormData.isFeatured ? '#f0fdf4' : '#ffffff',
+                      border: addFormData.isFeatured ? '1px solid #bbf7d0' : '1px solid #cbd5e1',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={addFormData.isFeatured}
+                      onChange={(e) => setAddFormData({ ...addFormData, isFeatured: e.target.checked })}
+                    />
+                    <div>
+                      <strong style={{ display: 'block', fontSize: '13px', color: '#166534' }}>⭐ Featured Item</strong>
+                      <small style={{ fontSize: '11px', color: '#15803d' }}>Sorot di rekomendasi beranda</small>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* CARD 3: Foto & Galeri Sepatu (Hingga 8 Foto) */}
+              <div
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '14px',
+                  padding: '18px',
+                  marginBottom: '20px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <span style={{ fontSize: '18px' }}>📸</span>
+                  <strong style={{ fontSize: '14px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    3. Foto &amp; Galeri Detail Sepatu (Maksimal 8 Foto)
+                  </strong>
+                </div>
+
+                <ImageUploader
+                  images={addFormData.images}
+                  maxPhotos={8}
+                  onChange={(newImgs) =>
+                    setAddFormData({
+                      ...addFormData,
+                      images: newImgs,
+                    })
+                  }
+                />
+              </div>
+
+              {/* CARD 4: Consignor & Deskripsi */}
+              <div
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '14px',
+                  padding: '18px',
+                  marginBottom: '10px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <span style={{ fontSize: '18px' }}>📝</span>
+                  <strong style={{ fontSize: '14px', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    4. Consignor &amp; Deskripsi Produk
+                  </strong>
+                </div>
+
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                    Nama Consignor / Penjual
+                  </label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={addFormData.consignor}
+                    onChange={(e) => setAddFormData({ ...addFormData, consignor: e.target.value })}
+                    style={{ background: '#fff' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                    Deskripsi &amp; Detail Produk
+                  </label>
+                  <textarea
+                    className="form-textarea"
+                    rows="3"
+                    placeholder="Tuliskan catatan kondisi, kelengkapan boks, extra laces, atau cerita siluet ini..."
+                    value={addFormData.description}
+                    onChange={(e) => setAddFormData({ ...addFormData, description: e.target.value })}
+                    style={{ background: '#fff' }}
+                  />
+                </div>
+              </div>
+
+              {/* Modal Footer Buttons */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  gap: '12px',
+                  marginTop: '20px',
+                  paddingTop: '16px',
+                  borderTop: '1px solid #e2e8f0',
+                }}
+              >
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setIsAddModalOpen(false)}
+                  style={{ padding: '10px 20px', fontSize: '14px' }}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  style={{
+                    padding: '10px 24px',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    background: 'linear-gradient(135deg, #0f172a 0%, #006b52 100%)',
+                    border: '1px solid rgba(0,223,162,0.4)',
+                    boxShadow: '0 4px 14px rgba(0,107,82,0.3)',
+                  }}
+                >
+                  🚀 Simpan &amp; Tayangkan ke Katalog
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   )
