@@ -132,6 +132,15 @@ function Header({
 
             <button
               type="button"
+              className={`header-nav-link ${activeTab === 'orders' ? 'active' : ''}`}
+              onClick={() => onSelectTab('orders')}
+              title="Daftar Pesanan & Resi Pengiriman"
+            >
+              Pesanan
+            </button>
+
+            <button
+              type="button"
               className={`header-nav-link ${activeTab === 'profile' ? 'active' : ''}`}
               onClick={() => onSelectTab('profile')}
             >
@@ -242,7 +251,7 @@ function Header({
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation for PWA */}
+      {/* Mobile Bottom Navigation for PWA (5 Halaman Utama: Home, Kelola, Sell, Pesanan, Profile) */}
       <nav className="mobile-bottom-nav">
         <button
           type="button"
@@ -278,6 +287,20 @@ function Header({
             <line x1="7" y1="7" x2="7.01" y2="7" />
           </svg>
           <span>Sell</span>
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
+          onClick={() => onSelectTab('orders')}
+          title="Daftar Pesanan & Resi"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <path d="M16 10a4 4 0 0 1-8 0" />
+          </svg>
+          <span>Pesanan</span>
         </button>
 
         <button

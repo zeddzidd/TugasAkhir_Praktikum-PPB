@@ -154,6 +154,41 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
     setOrderNumber(newOrderNum)
     setCheckoutStep('payment')
   }
+
+  const handleConfirmPaid = () => {
+    try {
+      const savedOrdersRaw = localStorage.getItem('zedconsign_user_orders_v1')
+      const ordersList = savedOrdersRaw ? JSON.parse(savedOrdersRaw) : []
+      const newOrderRecord = {
+        id: orderNumber || `INV/ZC-2026/${Math.floor(10000 + Math.random() * 90000)}`,
+        date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB',
+        shoeId: shoe.id,
+        shoeName: shoe.name,
+        shoeBrand: shoe.brand,
+        shoeImage: (Array.isArray(shoe.images) && shoe.images[0]) || shoe.image || '/shoes/dunk-low.svg',
+        shoeImages: Array.isArray(shoe.images) && shoe.images.length > 0 ? shoe.images : [shoe.image || '/shoes/dunk-low.svg'],
+        size: getSizeLabel(selectedSize),
+        condition: shoe.condition,
+        price: currentPrice,
+        shippingCost: shippingFee,
+        shippingType: shippingMethod === 'express' ? '⚡ Express Shipping (1-2 Hari Kerja dari Vault)' : '📦 Standard Shipping (3-5 Hari Kerja)',
+        trackingNumber: `ZC-${shippingMethod === 'express' ? 'EXP' : 'REG'}-${Math.floor(100000 + Math.random() * 900000)}ID`,
+        courier: shippingMethod === 'express' ? 'JNE Express x ZedConsign Courier' : 'SiCepat Cargo Reguler',
+        status: 'Diproses di Vault',
+        buyerName: buyerName || (currentUser?.fullName || 'Member ZedConsign'),
+        buyerPhone: buyerPhone || (currentUser?.phone || '081234567890'),
+        shippingAddress: shippingAddress || 'Jl. Prof. Soedarto No. 13, Tembalang, Kota Semarang, Jawa Tengah 50275',
+        paymentMethod: paymentMethod === 'qris' ? 'QRIS Instant BCA' : paymentMethod.replace('_', ' ').toUpperCase(),
+        vaultVerificationTag: `ZC-AUTH-${Math.floor(100000 + Math.random() * 900000)}-VAULT`,
+        verifiedBy: 'Chief Authenticator ZedConsign Vault',
+      }
+      ordersList.unshift(newOrderRecord)
+      localStorage.setItem('zedconsign_user_orders_v1', JSON.stringify(ordersList))
+    } catch (e) {
+      console.warn('Gagal mencatat pesanan:', e)
+    }
+    setCheckoutStep('success')
+  }
   
   // Multi-photo gallery support (up to 8 detail photos)
   const shoePhotos = useMemo(() => {
@@ -1348,7 +1383,7 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
                     <button
                       type="button"
                       className="btn-confirm-payment-paid"
-                      onClick={() => setCheckoutStep('success')}
+                      onClick={handleConfirmPaid}
                     >
                       Saya Sudah Membayar (Konfirmasi Pembayaran) ✓
                     </button>

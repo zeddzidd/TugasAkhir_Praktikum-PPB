@@ -44,6 +44,7 @@ function ManageShoes({
   const [errorMsg, setErrorMsg] = useState('')
   const [syncFeedback, setSyncFeedback] = useState(null)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [selectedDetailShoe, setSelectedDetailShoe] = useState(null)
 
   // Calculate statistics
   const totalItems = shoes.length
@@ -362,9 +363,14 @@ function ManageShoes({
               filteredShoes.map((shoe) => (
                 <tr key={shoe.id}>
                   <td>
-                    <div className="table-shoe-cell">
+                    <div
+                      className="table-shoe-cell"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => setSelectedDetailShoe(shoe)}
+                      title="Klik untuk melihat detail lengkap sepatu"
+                    >
                       <img
-                        src={shoe.image || '/shoes/dunk-low.svg'}
+                        src={shoe.image || (Array.isArray(shoe.images) && shoe.images[0]) || '/shoes/dunk-low.svg'}
                         alt={shoe.name}
                         className="table-shoe-thumb"
                         onError={(e) => {
@@ -423,6 +429,15 @@ function ManageShoes({
                   </td>
                   <td style={{ textAlign: 'center' }}>
                     <div style={{ display: 'inline-flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        style={{ padding: '6px 12px', fontSize: '13px' }}
+                        onClick={() => setSelectedDetailShoe(shoe)}
+                        title="Lihat detail lengkap inventaris sepatu"
+                      >
+                        👁️ Detail
+                      </button>
                       <button
                         type="button"
                         className="btn-edit"
@@ -701,6 +716,229 @@ function ManageShoes({
                   Ya, Hapus Data
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal Detail Inventaris Sepatu (Memenuhi Kriteria Halaman Detail) */}
+      {selectedDetailShoe && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setSelectedDetailShoe(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="modal-window"
+            style={{ maxWidth: '680px', padding: '0', overflow: 'hidden' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '18px 24px',
+                borderBottom: '1px solid var(--border-color)',
+                background: 'var(--bg-main)',
+              }}
+            >
+              <div>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    color: 'var(--primary)',
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Detail Inventaris Vault &bull; {selectedDetailShoe.brand}
+                </span>
+                <h3 style={{ margin: '4px 0 0', fontSize: '18px', fontWeight: '800' }}>
+                  {selectedDetailShoe.name}
+                </h3>
+              </div>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setSelectedDetailShoe(null)}
+                style={{ fontSize: '24px', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div style={{ padding: '24px', maxHeight: '75vh', overflowY: 'auto' }}>
+              {/* Product Showcase */}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '20px',
+                  alignItems: 'center',
+                  background: '#f9fafb',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '20px',
+                }}
+              >
+                <img
+                  src={
+                    (Array.isArray(selectedDetailShoe.images) && selectedDetailShoe.images[0]) ||
+                    selectedDetailShoe.image ||
+                    '/shoes/dunk-low.svg'
+                  }
+                  alt={selectedDetailShoe.name}
+                  style={{
+                    width: '140px',
+                    height: '110px',
+                    objectFit: 'contain',
+                    filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.08))',
+                  }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        padding: '3px 8px',
+                        borderRadius: '4px',
+                        fontWeight: '700',
+                        background: '#e0f2fe',
+                        color: '#0369a1',
+                      }}
+                    >
+                      {selectedDetailShoe.category}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        padding: '3px 8px',
+                        borderRadius: '4px',
+                        fontWeight: '700',
+                        background: '#ecfdf5',
+                        color: '#065f46',
+                      }}
+                    >
+                      {selectedDetailShoe.condition}
+                    </span>
+                    {selectedDetailShoe.isExpress && (
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          fontWeight: '700',
+                          background: '#fef3c7',
+                          color: '#b45309',
+                        }}
+                      >
+                        ⚡ Express Ready
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '24px', fontWeight: '900', color: 'var(--accent)', marginBottom: '4px' }}>
+                    {formatRupiah(selectedDetailShoe.price)}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-dim)' }}>
+                    ID: <code>{selectedDetailShoe.id}</code> &bull; Stok:{' '}
+                    <strong>{selectedDetailShoe.stock} unit</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Specification Grid */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: '12px',
+                  marginBottom: '20px',
+                }}
+              >
+                <div style={{ background: '#fff', border: '1px solid var(--border-color)', padding: '12px', borderRadius: '8px' }}>
+                  <small style={{ color: 'var(--text-dim)', display: 'block', fontSize: '11px' }}>Brand / Produsen</small>
+                  <strong>{selectedDetailShoe.brand}</strong>
+                </div>
+                <div style={{ background: '#fff', border: '1px solid var(--border-color)', padding: '12px', borderRadius: '8px' }}>
+                  <small style={{ color: 'var(--text-dim)', display: 'block', fontSize: '11px' }}>Ukuran Tertera</small>
+                  <strong>{selectedDetailShoe.size}</strong>
+                </div>
+                <div style={{ background: '#fff', border: '1px solid var(--border-color)', padding: '12px', borderRadius: '8px' }}>
+                  <small style={{ color: 'var(--text-dim)', display: 'block', fontSize: '11px' }}>Colorway Resmi</small>
+                  <strong>{selectedDetailShoe.colorway || '-'}</strong>
+                </div>
+                <div style={{ background: '#fff', border: '1px solid var(--border-color)', padding: '12px', borderRadius: '8px' }}>
+                  <small style={{ color: 'var(--text-dim)', display: 'block', fontSize: '11px' }}>Pemilik Konsinyasi (Consignor)</small>
+                  <strong>{selectedDetailShoe.consignor || 'ZedConsign Verified Seller'}</strong>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div style={{ marginBottom: '20px' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: '700', marginBottom: '6px' }}>Deskripsi Produk:</h4>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6', background: '#f9fafb', padding: '12px', borderRadius: '8px', margin: 0 }}>
+                  {selectedDetailShoe.description || 'Tidak ada deskripsi tambahan untuk produk ini.'}
+                </p>
+              </div>
+
+              {/* Photo Gallery Previews */}
+              {Array.isArray(selectedDetailShoe.images) && selectedDetailShoe.images.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: '700', marginBottom: '8px' }}>
+                    Galeri Foto Sudut Produk ({selectedDetailShoe.images.length} Foto):
+                  </h4>
+                  <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '6px' }}>
+                    {selectedDetailShoe.images.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={img}
+                        alt={`Sudut ${idx + 1}`}
+                        style={{
+                          width: '75px',
+                          height: '60px',
+                          objectFit: 'contain',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '6px',
+                          padding: '4px',
+                          background: '#fff',
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '12px',
+                padding: '16px 24px',
+                borderTop: '1px solid var(--border-color)',
+                background: 'var(--bg-main)',
+              }}
+            >
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setSelectedDetailShoe(null)}
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => {
+                  const s = selectedDetailShoe
+                  setSelectedDetailShoe(null)
+                  handleOpenEditModal(s)
+                }}
+              >
+                ✏️ Edit Data Sepatu Ini
+              </button>
             </div>
           </div>
         </div>

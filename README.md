@@ -36,81 +36,35 @@ Aplikasi dirancang responsif untuk pengalaman pengguna ponsel pintar (*smartphon
 
 ---
 
-## ✨ Fitur & Pemenuhan Kriteria Tugas Akhir
+## ✨ Pemenuhan 5 Kriteria Penilaian Tugas Akhir Praktikum PPB
 
-| Kriteria Tugas Akhir | Status | Keterangan Implementasi pada ZedConsign |
-| :--- | :---: | :--- |
-| **Stack Sesuai Modul Praktikum** | ✅ | Menggunakan **React 19**, **Vite**, dan **vite-plugin-pwa** murni berbasis **JavaScript**. |
-| **Minimal 3 Halaman Navigasi** | ✅ | Menyediakan **4 modul halaman**: Katalog Sepatu, Kelola Sepatu (CRUD), Titip Jual (Consign), dan Profil Pengguna. |
-| **Halaman Profil Mahasiswa** | ✅ | Memuat data lengkap: **Nama, NIM, Kelompok 41, Prodi S1 Teknik Komputer, Fakultas Teknik UNDIP**, avatar, dan status tugas akhir. |
-| **Halaman CRUD Fungsional** | ✅ | Operasi **Create** (tambah sepatu), **Read** (tabel inventaris & metrik stok), **Update** (edit data), dan **Delete** (hapus unit) tersimpan aman di `localStorage` dan tabel Supabase. |
-| **PWA Installable & Offline Ready** | ✅ | Dilengkapi `manifest.webmanifest`, service worker cache, lencana offline otomatis, dan ikon monogram **ZC** baru. |
-| **Deploy Ready** | ✅ | Dilengkapi konfigurasi `vercel.json` SPA rewrites dan build produksi bersih tanpa error. |
+Aplikasi ini telah memenuhi dan melampaui **100% dari 5 Kriteria Utama** yang dipersyaratkan pada Tugas Akhir Praktikum Pemrograman Perangkat Bergerak:
 
----
-
-## 🌟 Fitur Unggulan Aplikasi
-
-### 1. Desain & Antarmuka Luxury Streetwear (Kick Avenue Inspired)
-- **Monogram Logo "ZC"**: Ikon vektor SVG dan PNG resolusi tinggi (192x192 & 512x512) dengan aksen obsidian dan emerald glow.
-- **Header Responsif Mobile**: Logo, kolom pencarian dinamis, tombol *Masuk*, dan tombol *Daftar* tertata proporsional tanpa terpotong di layar HP (iPhone/Android).
-- **Sub-Navigasi Horizontal**: Kategori *Redemption Center*, *⚡ Express Shipping*, *📦 Standard Shipping*, *Sneakers*, *Basketball*, *Casual*, dan *Luxury*.
-- **Hero Banner Carousel (5 Slide Teratas)**: Animasi transisi halus, counter slide (`5/5`), navigasi panah (*chevrons*), dan dukungan *touch swipe* di layar ponsel.
-
-### 2. Modal Detail Sepatu & Galeri Multi-Foto (Hingga 8 Foto)
-- **Tampilan Galeri Produk**: Menampilkan hingga **8 foto detail** dari unit sepatu yang dijual.
-- **Navigasi Foto Lengkap**: Tombol panah kiri/kanan, indikator titik (*dots*), lencana penghitung foto (*misal Foto 1 / 4*), serta barisan thumbnail strip interaktif di bawah foto utama.
-- **Pilihan Ukuran Interaktif (Size Grid US / EU / UK / CM)**: Menghitung harga dinamis berdasarkan ukuran sepatu, lengkap dengan lencana *⚡ Express* dan *Best Price*.
-- **Metode Pengiriman Adaptif**: Pilihan antara **⚡ Express Shipping** (1-2 hari kerja dari Vault, Rp 45.000) dan **📦 Standard Shipping** (3-5 hari kerja, Rp 20.000) dengan kalkulasi total harga langsung.
-- **Fitur Tambahan**: Tombol *Share* salin tautan produk, toggle simpan favorit (*Bookmark*), pop-up *Size Chart Guide*, dan *Checkout Purchase Sheet*.
-
-### 3. Formulir Titip Jual & Uploader 8 Foto
-- **Multi-Photo Uploader**: Penjual dapat mengunggah hingga **8 foto** sekaligus melalui kamera HP, galeri file, drag & drop, preset siluet, atau URL eksternal.
-- **Kompresi Otomatis**: Foto dikompresi otomatis via HTML5 Canvas (Base64 ringan) agar penyimpanan offline dan Supabase tetap cepat dan hemat kuota.
-- **Rekomendasi 8 Sudut Verifikasi**:
-  1. *Sisi Luar (Lateral)*
-  2. *Sisi Dalam (Medial)*
-  3. *Tampak Depan (Toe Box)*
-  4. *Tampak Belakang (Heel & Logo)*
-  5. *Sol Bawah (Outsole / Traction)*
-  6. *Insole & Tag Ukuran*
-  7. *Detail Jahitan & Tekstur Material*
-  8. *Kotak / Box & Kelengkapan Ekstra*
-- **Pengaturan Cover**: Foto pertama otomatis menjadi foto sampul (*Cover*), dengan opsi mengubah cover atau menghapus foto per-slot.
-- **Kalkulator Titip Jual**: Menghitung otomatis potongan biaya jasa 5% transparan dan estimasi pencairan dana bersih.
-
-### 4. Manajemen Inventaris & CRUD
-- **Create**: Tambah model sepatu baru lengkap dengan galeri foto, ukuran, kondisi, harga, dan nama consignor.
-- **Read**: Tabel inventaris dengan badge stok, kategori, ringkasan total nilai barang (*Inventory Valuation*), dan pencarian real-time.
-- **Update**: Modal formulir pengeditan data unit yang sudah ada.
-- **Delete**: Konfirmasi modal hapus unit sepatu.
-- **Tombol Reset Default**: Mengembalikan data awal bawaan katalog sewaktu-waktu.
-
-### 5. Integrasi Database Supabase & Offline Mock Auth
-- Terhubung dengan Supabase Client di `src/lib/supabase.js`.
-- Skrip database SQL lengkap di `supabase/schema.sql` (tabel `public.profiles` dan `public.shoes` dengan kolom array `images TEXT[]`).
-- Dialog modal Login dan Registrasi interaktif.
-- Mendukung *offline authentication mock*, sehingga pengguna tetap dapat login, register, dan bertransaksi saat koneksi internet terputus.
-
-### 6. Customer Support Desk Widget
-- Widget mengambang (*floating button*) hijau di pojok kanan bawah dengan opsi konsultasi konsinyasi, edukasi kurasi autentikasi, pengiriman express, dan direct link ke WhatsApp Customer Service.
+| No | Kriteria Tugas Akhir Praktikum PPB | Status | Bukti & Keterangan Implementasi pada ZedConsign |
+| :---: | :--- | :---: | :--- |
+| **1** | **Menggunakan API (Web Service) yang dibuat sendiri sesuai dengan Modul 1** | ✅ **TERPENUHI** | Terhubung ke **Supabase Cloud PostgreSQL REST API** (`https://pkyghvhifthnxlrzfpoc.supabase.co/rest/v1/`) yang mengelola tabel `users`, `profiles`, dan `shoes`. Endpoint mendukung operasi CRUD penuh (GET, POST, PATCH/UPSERT, DELETE) langsung via REST client tanpa limitasi email. |
+| **2** | **Memiliki Bottom Navigation Bar** | ✅ **TERPENUHI** | Memiliki bar navigasi bawah bergerak (**Bottom Navigation Bar PWA**) dengan 5 item menu responsif yang selalu dapat diakses di bagian bawah layar ponsel: **Home**, **Kelola**, **Sell**, **Pesanan**, dan **Profile**. |
+| **3** | **Memiliki minimal 5 halaman** | ✅ **TERPENUHI** | Memiliki **5 halaman mandiri lengkap**: <br>1. `Katalog Sepatu` (Beranda Marketplace & Banner Slider)<br>2. `Kelola Inventaris` (Manajemen CRUD & Stok Sepatu)<br>3. `Titip Jual` (Formulir Konsinyasi & Uploader 8 Foto)<br>4. `Pesanan & Resi` (Daftar Riwayat Order, Ekspedisi, Vault Tracking)<br>5. `Profil & About` (Akun Pengguna, Deskripsi PWA & Data Mahasiswa) |
+| **4** | **Minimal terdapat 2 halaman utama yang memiliki list dan setiap item pada list dapat diklik untuk menampilkan halaman detail** | ✅ **TERPENUHI** (Memiliki 3 Halaman List-Detail) | 1. **Halaman Katalog**: List kartu sepatu $\rightarrow$ diklik membuka **Modal Detail Sepatu**, multi-angle gallery 8 foto, selector ukuran dinamis, dan checkout pembayaran.<br>2. **Halaman Kelola Inventaris**: List tabel sepatu $\rightarrow$ diklik / tombol **👁️ Detail** membuka **Modal Detail Inventaris**, spesifikasi lengkap, stok, harga, dan foto sudut.<br>3. **Halaman Pesanan**: List kartu order $\rightarrow$ diklik membuka **Modal Detail Pesanan & Resi**, QRIS keaslian, tracking ekspedisi, dan invoice resmi. |
+| **5** | **Memiliki 1 halaman Profile/About aplikasi** | ✅ **TERPENUHI** | Halaman **Profile / About** memuat: <br>&bull; Identitas Lengkap Mahasiswa: **Shiddiq Yazid Nurhakim**, **NIM: 21120124140120**, **Kelompok 41**, S1 Teknik Komputer UNDIP.<br>&bull; Informasi akun pengguna, status keanggotaan consignor terverifikasi, edit profil langsung ke Supabase.<br>&bull; About aplikasi (arsitektur PWA Workbox, Supabase PostgreSQL, offline fallback). |
 
 ---
 
-## 📱 Struktur Halaman
+## 📱 5 Halaman Utama & Struktur Navigasi
 
 ```
 ZedConsign App
 ├── Header (Logo ZC, Search Bar, Sub-Nav Strip, Auth Masuk/Daftar)
 ├── Offline Banner (Deteksi Status Jaringan Real-Time)
 ├── Main Content:
-│   ├── [Tab: catalog] -> Beranda Katalog (Hero Carousel, Filter, 2-Col Shoe Cards, Modal Detail)
-│   ├── [Tab: manage]  -> Kelola Inventaris CRUD (Metrik Stok, Filter Tabel, Tambah/Edit/Hapus)
-│   ├── [Tab: consign] -> Formulir Titip Jual (4 Langkah, Kalkulator 5%, Upload 8 Foto)
-│   └── [Tab: profile] -> Profil Mahasiswa (Identitas Shiddiq Yazid, Status Syarat TA, Logout)
+│   ├── [Halaman 1: Katalog (Home)]  -> List Sepatu -> Modal Detail Sepatu & Checkout Pembayaran
+│   ├── [Halaman 2: Kelola (CRUD)]   -> List Inventaris -> Modal Detail Spesifikasi & Stok
+│   ├── [Halaman 3: Titip Jual (Sell)] -> Formulir 4 Langkah, Kalkulator Fee 5%, Uploader 8 Foto
+│   ├── [Halaman 4: Pesanan (Orders)] -> List Pesanan -> Modal Detail Invoice, Resi & Sertifikat Vault
+│   └── [Halaman 5: Profil & About]   -> Identitas Shiddiq Yazid, NIM, Kelompok 41, Edit Profil & About PWA
 ├── Support Floating Widget (WhatsApp Help Desk)
-├── Auth Modal (Login & Register Popup)
-├── Mobile Bottom Navigation Bar (Home, CRUD, Sell, Profile)
+├── Auth Modal (Login & Register Popup dengan direct database storage)
+├── Mobile Bottom Navigation Bar (5 Menu: Home, Kelola, Sell, Pesanan, Profile)
 └── Footer (Branding, Legal, & Informasi Layanan)
 ```
 

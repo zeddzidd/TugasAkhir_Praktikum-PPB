@@ -7,6 +7,7 @@ import AuthModal from './components/AuthModal.jsx'
 import Catalog from './pages/Catalog.jsx'
 import ManageShoes from './pages/ManageShoes.jsx'
 import ConsignInfo from './pages/ConsignInfo.jsx'
+import Orders from './pages/Orders.jsx'
 import Profile from './pages/Profile.jsx'
 import { DEFAULT_SHOES } from './data/shoes.js'
 import {
@@ -187,6 +188,13 @@ function App() {
             onAddShoe={handleAddShoe}
             onNavigateCatalog={() => handleSelectTab('catalog')}
             onNavigateManage={() => handleSelectTab('manage')}
+            currentUser={currentUser}
+            onOpenAuth={(mode) => setAuthModalMode(mode || 'login')}
+          />
+        )}
+        {tab === 'orders' && (
+          <Orders
+            onNavigateCatalog={() => handleSelectTab('catalog')}
             currentUser={currentUser}
             onOpenAuth={(mode) => setAuthModalMode(mode || 'login')}
           />
