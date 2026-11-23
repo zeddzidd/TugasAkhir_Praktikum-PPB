@@ -35,89 +35,162 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
   const [tab, setTab] = useState('upload')
   const [urlInput, setUrlInput] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
+  const [processingStatus, setProcessingStatus] = useState('')
   const [statusNotice, setStatusNotice] = useState('')
   const fileInputRef = useRef(null)
 
   const showNotice = (msg) => {
     setStatusNotice(msg)
-    setTimeout(() => setStatusNotice(''), 3500)
+    setTimeout(() => setStatusNotice(''), 4000)
   }
 
-  // Compress & convert a file to lightweight Base64
+  // Compress & convert a file to lightweight Base64 (mobile-safe)
   const compressFile = (file) => {
     return new Promise((resolve) => {
+      // Timeout pengaman jika file HEIC / kamera berat di HP
+      const timer = setTimeout(() => {
+        resolve(null)
+      }, 8000)
+
       const reader = new FileReader()
       reader.onload = (e) => {
+        const rawData = e.target?.result
+        if (!rawData || typeof rawData !== 'string') {
+          clearTimeout(timer)
+          return resolve(null)
+        }
+
         const img = new Image()
         img.onload = () => {
-          const maxDim = 850
-          let width = img.width
-          let height = img.height
+          clearTimeout(timer)
+          try {
+            const maxDim = 640 // Resolusi optimal agar ringan di HP dan muat di localStorage
+            let width = img.width
+            let height = img.height
 
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width)
-              width = maxDim
-            } else {
-              width = Math.round((width * maxDim) / height)
-              height = maxDim
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width)
+                width = maxDim
+              } else {
+                width = Math.round((width * maxDim) / height)
+                height = maxDim
+              }
             }
+
+            const canvas = document.createElement('canvas')
+            canvas.width = Math.max(1, width)
+            canvas.height = Math.max(1, height)
+            const ctx = canvas.getContext('2d')
+            if (!ctx) {
+              return resolve(rawData.length < 400000 ? rawData : null)
+            }
+
+            // Latar putih jika foto transparan
+            ctx.fillStyle = '#FFFFFF'
+            ctx.fillRect(0, 0, width, height)
+            ctx.drawImage(img, 0, 0, width, height)
+
+            const compressed = canvas.toDataURL('image/jpeg', 0.76)
+            resolve(compressed)
+          } catch (canvasErr) {
+            console.warn('Canvas error, fallback ke data asli:', canvasErr)
+            resolve(rawData.length < 400000 ? rawData : null)
           }
-
-          const canvas = document.createElement('canvas')
-          canvas.width = width
-          canvas.height = height
-          const ctx = canvas.getContext('2d')
-          ctx.drawImage(img, 0, 0, width, height)
-
-          const compressed = canvas.toDataURL('image/jpeg', 0.82)
-          resolve(compressed)
         }
-        img.onerror = () => resolve(e.target.result)
-        img.src = e.target.result
+        img.onerror = () => {
+          clearTimeout(timer)
+          // Jika browser HP gagal decode langsung (misal HEIC mentah), coba fallback jika ukuran aman
+          resolve(rawData.length < 400000 ? rawData : null)
+        }
+        img.src = rawData
       }
-      reader.onerror = () => resolve(null)
+      reader.onerror = () => {
+        clearTimeout(timer)
+        resolve(null)
+      }
       reader.readAsDataURL(file)
     })
   }
 
-  // Handle multiple files from input or drop
+  // Handle multiple files from input or drop simultaneously
   const handleFiles = async (filesList) => {
     if (!filesList || filesList.length === 0) return
 
-    const availableSlots = maxPhotos - currentImages.length
+    // Jika gambar yang ada saat ini hanya placeholder bawaan 'dunk-low.svg', gantikan langsung
+    const isPlaceholderOnly =
+      currentImages.length === 1 && currentImages[0].includes('dunk-low.svg')
+    const baseImages = isPlaceholderOnly ? [] : currentImages
+
+    const availableSlots = maxPhotos - baseImages.length
     if (availableSlots <= 0) {
       showNotice(`Maksimal ${maxPhotos} foto telah tercapai. Hapus beberapa foto untuk menambahkan yang baru.`)
       return
     }
 
     setIsProcessing(true)
-    const validFiles = Array.from(filesList).filter((f) => f.type.startsWith('image/'))
+    setProcessingStatus('Menyiapkan berkas foto dari HP...')
+
+    // Validasi file gambar fleksibel (mendukung JPG, PNG, WEBP, HEIC dari kamera iPhone)
+    const isImageFile = (f) => {
+      if (f.type && (f.type.startsWith('image/') || f.type.includes('heic') || f.type.includes('heif'))) return true
+      if (f.name && f.name.match(/\.(jpe?g|png|webp|heic|heif|gif|svg|bmp)$/i)) return true
+      // Fallback kamera iPhone di mana MIME type terkadang kosong
+      if (!f.type && f.size > 0 && f.size < 25 * 1024 * 1024) return true
+      return false
+    }
+
+    const validFiles = Array.from(filesList).filter(isImageFile)
 
     if (validFiles.length === 0) {
       setIsProcessing(false)
-      showNotice('Format berkas tidak didukung. Harap pilih gambar PNG, JPG, atau WEBP.')
+      setProcessingStatus('')
+      showNotice('Format foto tidak terbaca. Harap pilih foto PNG, JPG, JPEG, WEBP, atau foto kamera HP.')
       return
     }
 
     const filesToProcess = validFiles.slice(0, availableSlots)
     if (validFiles.length > availableSlots) {
-      showNotice(`Hanya ${availableSlots} foto yang ditambahkan karena batas maksimal ${maxPhotos} foto.`)
+      showNotice(`Menambahkan ${availableSlots} foto sekaligus (maksimal ${maxPhotos} foto).`)
     }
 
     try {
-      const compressedResults = await Promise.all(filesToProcess.map((f) => compressFile(f)))
-      const validResults = compressedResults.filter(Boolean)
+      // Proses satu per satu secara sekuensial agar tidak memicu memory leak di HP
+      const validResults = []
+      for (let i = 0; i < filesToProcess.length; i++) {
+        setProcessingStatus(`Memproses foto ${i + 1} dari ${filesToProcess.length}...`)
+        try {
+          const res = await compressFile(filesToProcess[i])
+          if (res) {
+            validResults.push(res)
+          }
+        } catch (compErr) {
+          console.warn('Gagal kompres foto ke-' + (i + 1), compErr)
+        }
+      }
 
-      const updated = [...currentImages, ...validResults]
-      onChange(updated, updated[0] || '')
+      if (validResults.length > 0) {
+        const updated = [...baseImages, ...validResults]
+        onChange(updated, updated[0] || '')
+        showNotice(`✓ Berhasil menambahkan ${validResults.length} foto sekaligus tanpa error!`)
+      } else {
+        showNotice('Gagal memproses foto. Silakan coba lagi.')
+      }
     } catch (err) {
       console.error('Gagal memproses gambar:', err)
-      showNotice('Gagal mengunggah foto. Silakan coba lagi.')
+      showNotice('Gagal mengunggah foto: ' + (err.message || 'Error tidak diketahui'))
     } finally {
       setIsProcessing(false)
+      setProcessingStatus('')
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
+  }
+
+  // Instant fill 8 preset angles
+  const handleFillAllPresets = () => {
+    const eightAngles = PRESET_IMAGES.slice(0, maxPhotos).map((p) => p.value)
+    onChange(eightAngles, eightAngles[0])
+    showNotice(`✓ Berhasil memuat ${eightAngles.length} foto sudut sekaligus secara instan!`)
   }
 
   const handleFileChange = (e) => {
@@ -195,16 +268,27 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
           </p>
         </div>
 
-        {currentImages.length > 0 && (
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             type="button"
-            className="btn-iu-reset"
-            onClick={handleResetAll}
-            title="Reset ke gambar awal"
+            className="btn-secondary"
+            style={{ padding: '6px 14px', fontSize: '12px', fontWeight: '700' }}
+            onClick={handleFillAllPresets}
+            title="Muat 8 foto sudut preset sekaligus secara instan"
           >
-            Reset Semua
+            ⚡ Isi Cepat 8 Foto
           </button>
-        )}
+          {currentImages.length > 0 && (
+            <button
+              type="button"
+              className="btn-iu-reset"
+              onClick={handleResetAll}
+              title="Reset ke gambar awal"
+            >
+              Reset Semua
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Progress Bar */}
@@ -276,7 +360,7 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
             ref={fileInputRef}
             type="file"
             multiple
-            accept="image/*"
+            accept="image/*, image/jpeg, image/jpg, image/png, image/webp, image/heic, image/heif"
             style={{ display: 'none' }}
             onChange={handleFileChange}
           />
@@ -295,15 +379,55 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
               </svg>
             </div>
             <p className="dropzone-main-text">
-              <strong>Klik untuk memilih 1 s.d {maxPhotos} foto</strong> atau seret berkas ke sini
+              <strong>Pilih Banyak Foto Sekaligus (Hingga {maxPhotos} Foto)</strong>
             </p>
             <span className="dropzone-sub-text">
-              Mendukung banyak foto sekaligus (PNG, JPG, JPEG, WEBP atau jepret langsung via Kamera HP)
+              Pilih langsung banyak foto dari Galeri HP Anda sekaligus atau jepret langsung via Kamera
             </span>
 
+            {/* Quick Action Buttons */}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '14px' }}>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ padding: '10px 18px', fontSize: '13px', borderRadius: '8px' }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  fileInputRef.current?.click()
+                }}
+              >
+                📁 Pilih Banyak Foto dari Galeri HP
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ padding: '10px 18px', fontSize: '13px', borderRadius: '8px' }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleFillAllPresets()
+                }}
+              >
+                ⚡ Isi Cepat 8 Sudut Preset
+              </button>
+            </div>
+
             {isProcessing && (
-              <div className="dropzone-loading">
-                <span>Sedang mengompresi &amp; memproses foto...</span>
+              <div
+                className="dropzone-loading"
+                style={{
+                  marginTop: '16px',
+                  background: 'rgba(0, 0, 0, 0.75)',
+                  padding: '12px 18px',
+                  borderRadius: '10px',
+                  color: '#fff',
+                }}
+              >
+                <div style={{ fontSize: '13px', fontWeight: '700' }}>
+                  ⏳ {processingStatus || 'Sedang mengompresi & memproses foto...'}
+                </div>
+                <small style={{ fontSize: '11px', opacity: 0.85, display: 'block', marginTop: '2px' }}>
+                  Mohon tunggu beberapa detik, foto disesuaikan otomatis agar tidak berat di HP.
+                </small>
               </div>
             )}
           </div>
