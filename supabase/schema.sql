@@ -1,16 +1,11 @@
 -- =============================================================================
--- ZEDCONSIGN: DATABASE TABEL LANGSUNG (DIRECT TABLE STORAGE)
--- Tanpa ketergantungan Supabase Auth & Bebas Error Email Rate Limit
+-- ZEDCONSIGN: DATABASE TABEL LANGSUNG DENGAN KEBIJAKAN AKSES PENUH
+-- Kompatibel 100% dengan RLS Supabase (Tidak akan ada penolakan keamanan)
 -- Jalankan SELURUH skrip ini di SQL Editor Supabase, lalu klik "Run".
 -- =============================================================================
 
--- 1. Hapus tabel lama jika ada agar bersih dan fresh
-DROP TABLE IF EXISTS public.users CASCADE;
-DROP TABLE IF EXISTS public.profiles CASCADE;
-DROP TABLE IF EXISTS public.shoes CASCADE;
-
--- 2. Buat Tabel USERS (Data pendaftaran akun aplikasi langsung masuk ke sini!)
-CREATE TABLE public.users (
+-- 1. Buat Tabel USERS jika belum ada
+CREATE TABLE IF NOT EXISTS public.users (
   id TEXT PRIMARY KEY,
   full_name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
@@ -20,8 +15,8 @@ CREATE TABLE public.users (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 3. Buat Tabel PROFILES (Sebagai mirror / cadangan data profil pengguna)
-CREATE TABLE public.profiles (
+-- 2. Buat Tabel PROFILES jika belum ada
+CREATE TABLE IF NOT EXISTS public.profiles (
   id TEXT PRIMARY KEY,
   full_name TEXT,
   email TEXT,
@@ -32,8 +27,8 @@ CREATE TABLE public.profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 4. Buat Tabel SHOES (Katalog Sepatu & Inventaris Titip Jual dengan Dukungan Multi-Foto)
-CREATE TABLE public.shoes (
+-- 3. Buat Tabel SHOES jika belum ada
+CREATE TABLE IF NOT EXISTS public.shoes (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   colorway TEXT,
@@ -52,20 +47,37 @@ CREATE TABLE public.shoes (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 5. Nonaktifkan Row Level Security (RLS) agar semua operasi INSERT / SELECT / UPDATE
--- dari aplikasi web berjalan 100% mulus tanpa diblokir oleh Supabase
-ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.shoes DISABLE ROW LEVEL SECURITY;
+-- 4. Aktifkan RLS dan Berikan Akses Terbuka Penuh (All Operations Permitted)
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.shoes ENABLE ROW LEVEL SECURITY;
 
--- 6. Berikan Hak Akses Penuh ke Semua Role (Anon, Authenticated, Postgres)
+DROP POLICY IF EXISTS "Allow all for users" ON public.users;
+CREATE POLICY "Allow all for users" ON public.users
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow all for profiles" ON public.profiles;
+CREATE POLICY "Allow all for profiles" ON public.profiles
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow all for shoes" ON public.shoes;
+CREATE POLICY "Allow all for shoes" ON public.shoes
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
+
+-- 5. Berikan Hak Akses Penuh ke Semua Role API Supabase
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role, postgres;
 GRANT ALL ON TABLE public.users TO anon, authenticated, service_role, postgres;
 GRANT ALL ON TABLE public.profiles TO anon, authenticated, service_role, postgres;
 GRANT ALL ON TABLE public.shoes TO anon, authenticated, service_role, postgres;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role, postgres;
 
--- 7. Masukkan Akun Demo Mahasiswa (Langsung tersimpan di Supabase!)
+-- 6. Masukkan Akun Shiddiq Yazid dan Akun OCO
 INSERT INTO public.users (id, full_name, email, phone, password, role)
 VALUES
   (
@@ -81,6 +93,14 @@ VALUES
     'Shiddiq Yazid',
     'shiddiqyazidn@gmail.com',
     '081234567890',
+    'password123',
+    'consignor'
+  ),
+  (
+    'usr_oco_ganteng',
+    'oco',
+    'ocoganteng@gmail.com',
+    '08999111',
     'password123',
     'consignor'
   )
@@ -102,12 +122,18 @@ VALUES
     'Shiddiq Yazid',
     'shiddiqyazidn@gmail.com',
     '081234567890'
+  ),
+  (
+    'usr_oco_ganteng',
+    'oco',
+    'ocoganteng@gmail.com',
+    '08999111'
   )
 ON CONFLICT (id) DO UPDATE
 SET full_name = EXCLUDED.full_name,
     phone = EXCLUDED.phone;
 
--- 8. Masukkan Data Katalog Awal Sepatu ZedConsign (Lengkap 7 Sepatu dengan Detail Foto)
+-- 7. Masukkan Seluruh 7 Katalog Sepatu Awal ZedConsign
 INSERT INTO public.shoes (id, name, colorway, brand, category, size, condition, price, image, images, description, consignor, stock, is_featured, is_express)
 VALUES
   (
@@ -121,7 +147,7 @@ VALUES
     2899000,
     '/shoes/shox-calistra.svg',
     ARRAY['/shoes/shox-calistra.svg', '/shoes/goadome-foam.svg', '/shoes/dunk-low.svg', '/shoes/jordan-retro.svg'],
-    'Siluet hybrid Mary Jane futuristik ikonik dari lini Nike Shox. Mengombinasikan patent leather upper dengan buckle strap adjustable, diamond textured tooling, dan twin heel Shox column pods berventilasi udara.',
+    'Siluet hybrid Mary Jane futuristik ikonik dari lini Nike Shox.',
     'ZedConsign Vault',
     4,
     true,
@@ -138,7 +164,7 @@ VALUES
     3299000,
     '/shoes/goadome-foam.svg',
     ARRAY['/shoes/goadome-foam.svg', '/shoes/shox-calistra.svg', '/shoes/new-balance.svg', '/shoes/yeezy-boost.svg'],
-    'Siluet rugged futuristik Nike Air Max Goadome Low Foam dalam colorway ikonik SP Green Goblin. Mengombinasikan molded metallic foam upper bertekstur wave dengan visible full-length Air-Sole unit dan rugged all-terrain lug outsole.',
+    'Siluet rugged futuristik Nike Air Max Goadome Low Foam dalam colorway ikonik SP Green Goblin.',
     'ZedConsign Vault',
     3,
     true,
@@ -155,7 +181,7 @@ VALUES
     1899000,
     '/shoes/dunk-low.svg',
     ARRAY['/shoes/dunk-low.svg', '/shoes/jordan-retro.svg', '/shoes/goadome-foam.svg', '/shoes/samba-og.svg'],
-    'Sneakers terpopuler dengan kombinasi warna hitam-putih klasik. Menggunakan material leather premium yang nyaman dipakai sehari-hari.',
+    'Sneakers terpopuler dengan kombinasi warna hitam-putih klasik.',
     'ZedConsign Verified Seller',
     5,
     true,
@@ -172,7 +198,7 @@ VALUES
     4250000,
     '/shoes/jordan-retro.svg',
     ARRAY['/shoes/jordan-retro.svg', '/shoes/dunk-low.svg', '/shoes/shox-calistra.svg', '/shoes/travis-scott.svg'],
-    'Ikon sneakers basket sepanjang masa warna legendaris Chicago Bulls 1985. Menggunakan premium full-grain leather dengan detail Wings logo klasik.',
+    'Ikon sneakers basket sepanjang masa warna legendaris Chicago Bulls 1985.',
     'Jakarta Vault Sneaker',
     2,
     true,
@@ -189,7 +215,7 @@ VALUES
     1650000,
     '/shoes/samba-og.svg',
     ARRAY['/shoes/samba-og.svg', '/shoes/dunk-low.svg', '/shoes/new-balance.svg', '/shoes/goadome-foam.svg'],
-    'Sepatu warisan sepak bola retro Jerman dengan suede T-toe dan gum sole khas. Sangat populer untuk tampilan street style kontemporer.',
+    'Sepatu warisan sepak bola retro Jerman dengan suede T-toe.',
     'Bandung Sneakerhead Consignment',
     4,
     true,
@@ -206,7 +232,7 @@ VALUES
     3899000,
     '/shoes/new-balance.svg',
     ARRAY['/shoes/new-balance.svg', '/shoes/goadome-foam.svg', '/shoes/samba-og.svg', '/shoes/shox-calistra.svg'],
-    'Koleksi flagship Made in USA dengan bantalan FuelCell responsif dan ENCAP midsole. Standar kenyamanan harian tertinggi.',
+    'Koleksi flagship Made in USA dengan bantalan FuelCell.',
     'ZedConsign Verified Seller',
     3,
     true,
@@ -223,7 +249,7 @@ VALUES
     4850000,
     '/shoes/yeezy-boost.svg',
     ARRAY['/shoes/yeezy-boost.svg', '/shoes/dunk-low.svg', '/shoes/travis-scott.svg', '/shoes/jordan-retro.svg'],
-    'Desain revolusioner karya Kanye West dengan upper Primeknit bergaris zebra dan midsole berteknologi Boost ultra empuk.',
+    'Desain revolusioner karya Kanye West upper Primeknit bergaris zebra.',
     'Surabaya Vault Sneakers',
     2,
     true,
@@ -240,7 +266,7 @@ VALUES
     18500000,
     '/shoes/travis-scott.svg',
     ARRAY['/shoes/travis-scott.svg', '/shoes/jordan-retro.svg', '/shoes/dunk-low.svg', '/shoes/yeezy-boost.svg'],
-    'Holy Grail kolaborasi Travis Scott x Jordan Brand. Menampilkan reverse oversized Swoosh warna sail, suede nubuck cokelat mocha kaya serat, dan signature Cactus Jack embroidery merah di tumit.',
+    'Holy Grail kolaborasi Travis Scott x Jordan Brand.',
     'Zed Collector Consignment',
     1,
     true,
@@ -248,5 +274,5 @@ VALUES
   )
 ON CONFLICT (id) DO NOTHING;
 
--- 9. Refresh API Cache PostgREST
+-- 8. Refresh API Cache
 NOTIFY pgrst, 'reload schema';
