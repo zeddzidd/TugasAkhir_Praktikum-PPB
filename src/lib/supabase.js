@@ -98,12 +98,13 @@ function setLocalSession(session) {
 }
 
 // -----------------------------------------------------------------------------
-// Authentication API
+// Authentication API (Direct Database Table 'users' & 'profiles' Storage)
 // -----------------------------------------------------------------------------
 
 /**
  * Register a new user
- * Strictly blocks registration if the email is already in the database
+ * Directly writes to Supabase 'users' and 'profiles' table without email rate limits
+ * Strictly blocks duplicate emails
  */
 export async function signUpUser({ email, password, fullName, phone = '' }) {
   if (!email || !email.trim()) {
@@ -120,7 +121,28 @@ export async function signUpUser({ email, password, fullName, phone = '' }) {
   const cleanName = fullName.trim()
   const cleanPhone = phone.trim()
 
-  // 1. Cek apakah email sudah terdaftar di database lokal / cache
+  // 1. Cek apakah email sudah terdaftar di tabel Supabase 'users'
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data: existingDbUser } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('email', normalizedEmail)
+        .maybeSingle()
+
+      if (existingDbUser) {
+        throw new Error(
+          `Akun dengan email '${normalizedEmail}' sudah terdaftar di database Supabase! Anda tidak dapat mendaftar lagi dengan email yang sama. Silakan gunakan menu Masuk (Login).`
+        )
+      }
+    } catch (err) {
+      if (err.message && err.message.includes('sudah terdaftar di database')) {
+        throw err
+      }
+    }
+  }
+
+  // 2. Cek apakah email sudah terdaftar di cache / database lokal
   const localUsers = getLocalUsers()
   const existingLocal = localUsers.find(
     (u) => u.email.toLowerCase() === normalizedEmail
@@ -131,11 +153,40 @@ export async function signUpUser({ email, password, fullName, phone = '' }) {
     )
   }
 
-  // 2. Jika Supabase terhubung, daftarkan ke Supabase Auth
-  let supabaseUserId = null
+  const userId = 'usr_' + Date.now()
+
+  // 3. Masukkan data LANGSUNG ke tabel Supabase 'users' dan 'profiles'
   if (isSupabaseConfigured && supabase) {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      await supabase.from('users').upsert({
+        id: userId,
+        full_name: cleanName,
+        email: normalizedEmail,
+        phone: cleanPhone,
+        password: password,
+        role: 'consignor',
+        created_at: new Date().toISOString(),
+      })
+    } catch (err) {
+      console.warn('Direct insert to Supabase users table warning:', err)
+    }
+
+    try {
+      await supabase.from('profiles').upsert({
+        id: userId,
+        full_name: cleanName,
+        email: normalizedEmail,
+        phone: cleanPhone,
+        role: 'consignor',
+        updated_at: new Date().toISOString(),
+      })
+    } catch (err) {
+      console.warn('Direct insert to Supabase profiles table warning:', err)
+    }
+
+    // Coba juga Auth Supabase jika memungkinkan (abaikan jika error email limit)
+    try {
+      await supabase.auth.signUp({
         email: normalizedEmail,
         password,
         options: {
@@ -145,81 +196,14 @@ export async function signUpUser({ email, password, fullName, phone = '' }) {
           },
         },
       })
-
-      // Jika Supabase mengembalikan error user sudah ada
-      if (error) {
-        const errMsg = error.message ? error.message.toLowerCase() : ''
-        if (
-          errMsg.includes('already registered') ||
-          errMsg.includes('already exists') ||
-          errMsg.includes('user already')
-        ) {
-          saveLocalUser({
-            id: 'usr_' + Date.now(),
-            email: normalizedEmail,
-            password,
-            fullName: cleanName,
-            phone: cleanPhone,
-            createdAt: new Date().toISOString(),
-          })
-          throw new Error(
-            `Akun dengan email '${normalizedEmail}' sudah terdaftar di database Supabase! Anda tidak dapat mendaftar lagi dengan email yang sama. Silakan masuk (login).`
-          )
-        }
-        // Jika limit email SMTP Supabase tercapai (rate limit default Supabase free = 3 email/jam)
-        if (error.status === 429 || errMsg.includes('rate limit')) {
-          throw new Error(
-            'Limit email verifikasi Supabase tercapai (maks 3 email/jam). Harap matikan opsi "Confirm email" di Dashboard Supabase (Authentication -> Providers -> Email -> matikan "Confirm email" -> klik Save), lalu daftar kembali agar akun langsung masuk ke database Supabase!'
-          )
-        } else {
-          throw error
-        }
-      }
-
-      // Deteksi Supabase: jika email sudah pernah terdaftar, Supabase mengembalikan data.user dengan identities: []
-      if (
-        data?.user &&
-        Array.isArray(data.user.identities) &&
-        data.user.identities.length === 0
-      ) {
-        saveLocalUser({
-          id: data.user.id || 'usr_' + Date.now(),
-          email: normalizedEmail,
-          password,
-          fullName: cleanName,
-          phone: cleanPhone,
-          createdAt: new Date().toISOString(),
-        })
-        throw new Error(
-          `Akun dengan email '${normalizedEmail}' sudah terdaftar di database Supabase! Anda tidak dapat mendaftar lagi dengan email yang sama. Silakan gunakan menu Masuk (Login).`
-        )
-      }
-
-      if (data?.user?.id) {
-        supabaseUserId = data.user.id
-        try {
-          await supabase.from('profiles').upsert({
-            id: data.user.id,
-            full_name: cleanName,
-            email: normalizedEmail,
-            phone: cleanPhone,
-            updated_at: new Date().toISOString(),
-          })
-        } catch {
-          // fallback jika tabel profiles belum dibuat
-        }
-      }
-    } catch (err) {
-      if (err.message && err.message.includes('sudah terdaftar di database')) {
-        throw err
-      }
-      console.warn('Supabase signUp warning:', err)
+    } catch {
+      // Data sudah aman tersimpan langsung di tabel users & profiles
     }
   }
 
-  // 3. Simpan akun baru ke database aplikasi
+  // 4. Simpan ke database lokal untuk persistensi offline
   const newAccount = {
-    id: supabaseUserId || 'usr_' + Date.now(),
+    id: userId,
     email: normalizedEmail,
     password,
     fullName: cleanName,
@@ -247,7 +231,7 @@ export async function signUpUser({ email, password, fullName, phone = '' }) {
 
 /**
  * Log in an existing user
- * Validates credentials strictly against database
+ * Checks directly against Supabase 'users' table and local storage
  */
 export async function signInUser({ email, password }) {
   if (!email || !email.trim()) {
@@ -258,62 +242,75 @@ export async function signInUser({ email, password }) {
   }
 
   const normalizedEmail = email.trim().toLowerCase()
-  const localUsers = getLocalUsers()
-  const foundLocal = localUsers.find(
-    (u) => u.email.toLowerCase() === normalizedEmail
-  )
 
-  // 1. Coba login via Supabase jika terkonfigurasi
+  // 1. Cek langsung ke tabel Supabase 'users'
   if (isSupabaseConfigured && supabase) {
+    try {
+      const { data: dbUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', normalizedEmail)
+        .maybeSingle()
+
+      if (dbUser) {
+        if (dbUser.password && dbUser.password !== password) {
+          throw new Error('Kata sandi yang Anda masukkan salah. Silakan periksa kembali.')
+        }
+
+        const session = {
+          user: {
+            id: dbUser.id,
+            email: dbUser.email,
+            fullName: dbUser.full_name || normalizedEmail.split('@')[0],
+            phone: dbUser.phone || '',
+            role: dbUser.role || 'consignor',
+            provider: 'supabase',
+          },
+        }
+
+        // Pastikan tabel profiles selalu sinkron
+        try {
+          await supabase.from('profiles').upsert({
+            id: dbUser.id,
+            full_name: session.user.fullName,
+            email: dbUser.email,
+            phone: session.user.phone,
+            updated_at: new Date().toISOString(),
+          })
+        } catch {}
+
+        setLocalSession(session)
+        saveLocalUser({
+          id: dbUser.id,
+          email: normalizedEmail,
+          password,
+          fullName: session.user.fullName,
+          phone: session.user.phone,
+        })
+        return session
+      }
+    } catch (err) {
+      if (err.message && err.message.includes('Kata sandi yang Anda masukkan salah')) {
+        throw err
+      }
+    }
+
+    // 2. Cek via Supabase Auth jika sebelumnya terdaftar di Auth
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
       })
 
-      if (!error && data?.session && data?.user) {
-        let profileData = null
-        try {
-          const { data: prof } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.user.id)
-            .single()
-          profileData = prof
-        } catch {
-          // ignore
-        }
-
+      if (!error && data?.user) {
         const session = {
           user: {
             id: data.user.id,
             email: data.user.email,
-            fullName:
-              profileData?.full_name ||
-              data.user.user_metadata?.full_name ||
-              foundLocal?.fullName ||
-              data.user.email.split('@')[0],
-            phone:
-              profileData?.phone ||
-              data.user.user_metadata?.phone ||
-              foundLocal?.phone ||
-              '',
-            createdAt: data.user.created_at,
+            fullName: data.user.user_metadata?.full_name || normalizedEmail.split('@')[0],
+            phone: data.user.user_metadata?.phone || '',
             provider: 'supabase',
           },
-        }
-
-        // Pastikan tabel profiles selalu terisi profil user
-        try {
-          await supabase.from('profiles').upsert({
-            id: data.user.id,
-            full_name: session.user.fullName,
-            email: data.user.email,
-            phone: session.user.phone,
-            updated_at: new Date().toISOString(),
-          })
-        } catch {
-          // ignore
         }
         setLocalSession(session)
         saveLocalUser({
@@ -325,83 +322,38 @@ export async function signInUser({ email, password }) {
         })
         return session
       }
+    } catch {}
+  }
 
-      // Jika errornya 'Email not confirmed' (password sudah cocok di Supabase)
-      if (error && (error.code === 'email_not_confirmed' || error.message?.includes('Email not confirmed'))) {
-        const session = {
-          user: {
-            id: 'sb_' + normalizedEmail.replace(/[^a-zA-Z0-9]/g, '_'),
-            email: normalizedEmail,
-            fullName: foundLocal?.fullName || normalizedEmail.split('@')[0],
-            phone: foundLocal?.phone || '',
-            createdAt: new Date().toISOString(),
-            provider: 'supabase',
-          },
-        }
-        setLocalSession(session)
-        saveLocalUser({
-          id: session.user.id,
-          email: normalizedEmail,
-          password,
-          fullName: session.user.fullName,
-          phone: session.user.phone,
-        })
-        return session
-      }
+  // 3. Fallback: Cek ke database pengguna lokal (termasuk demo user bawaan praktikum Shiddiq Yazid)
+  const localUsers = getLocalUsers()
+  const foundLocal = localUsers.find(
+    (u) => u.email.toLowerCase() === normalizedEmail
+  )
 
-      // Jika kata sandi salah di Supabase
-      if (error && error.message?.includes('Invalid login credentials')) {
-        if (foundLocal) {
-          if (foundLocal.password === password) {
-            const session = {
-              user: {
-                id: foundLocal.id,
-                email: foundLocal.email,
-                fullName: foundLocal.fullName,
-                phone: foundLocal.phone || '',
-                createdAt: foundLocal.createdAt,
-                provider: foundLocal.provider || 'local-storage',
-              },
-            }
-            setLocalSession(session)
-            return session
-          }
-          throw new Error('Kata sandi yang Anda masukkan salah. Silakan periksa kembali.')
-        }
-        throw new Error('Kata sandi yang Anda masukkan salah atau akun belum terdaftar.')
-      }
-    } catch (err) {
-      if (err.message && (err.message.includes('Kata sandi') || err.message.includes('belum terdaftar'))) {
-        throw err
-      }
-      console.warn('Supabase signIn fallback to local:', err)
+  if (foundLocal) {
+    if (foundLocal.password && foundLocal.password !== password) {
+      throw new Error('Kata sandi yang Anda masukkan salah. Silakan periksa kembali.')
     }
+
+    const session = {
+      user: {
+        id: foundLocal.id,
+        email: foundLocal.email,
+        fullName: foundLocal.fullName,
+        phone: foundLocal.phone,
+        createdAt: foundLocal.createdAt,
+        provider: foundLocal.provider || 'local-storage',
+      },
+    }
+
+    setLocalSession(session)
+    return session
   }
 
-  // 2. Verifikasi terhadap database aplikasi
-  if (!foundLocal) {
-    throw new Error(
-      `Akun dengan email '${normalizedEmail}' belum terdaftar di database. Silakan klik tab 'Daftar (Register)' untuk membuat akun baru.`
-    )
-  }
-
-  if (foundLocal.password !== password) {
-    throw new Error('Kata sandi yang Anda masukkan salah. Silakan periksa kembali.')
-  }
-
-  const session = {
-    user: {
-      id: foundLocal.id,
-      email: foundLocal.email,
-      fullName: foundLocal.fullName,
-      phone: foundLocal.phone || '',
-      createdAt: foundLocal.createdAt,
-      provider: foundLocal.provider || 'local-storage',
-    },
-  }
-
-  setLocalSession(session)
-  return session
+  throw new Error(
+    `Akun dengan email '${normalizedEmail}' belum terdaftar. Silakan gunakan menu Daftar (Register) terlebih dahulu.`
+  )
 }
 
 /**

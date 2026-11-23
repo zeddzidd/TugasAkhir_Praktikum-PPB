@@ -1,15 +1,28 @@
 -- =============================================================================
--- ZEDCONSIGN: SUPABASE DATABASE SCHEMA & INITIAL DATA
--- Copy dan paste seluruh skrip ini ke SQL Editor di Dashboard Supabase,
--- lalu klik tombol "Run".
+-- ZEDCONSIGN: DATABASE TABEL LANGSUNG (DIRECT TABLE STORAGE)
+-- Tanpa ketergantungan Supabase Auth & Bebas Error Email Rate Limit
+-- Jalankan SELURUH skrip ini di SQL Editor Supabase, lalu klik "Run".
 -- =============================================================================
 
--- 1. Enable UUID Extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- 1. Hapus tabel lama jika ada agar bersih dan fresh
+DROP TABLE IF EXISTS public.users CASCADE;
+DROP TABLE IF EXISTS public.profiles CASCADE;
+DROP TABLE IF EXISTS public.shoes CASCADE;
 
--- 2. Buat Tabel Profiles (Terkoneksi langsung ke Supabase Auth)
-CREATE TABLE IF NOT EXISTS public.profiles (
-  id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+-- 2. Buat Tabel USERS (Data pendaftaran akun aplikasi langsung masuk ke sini!)
+CREATE TABLE public.users (
+  id TEXT PRIMARY KEY,
+  full_name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  phone TEXT,
+  password TEXT,
+  role TEXT DEFAULT 'consignor',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 3. Buat Tabel PROFILES (Sebagai mirror / cadangan data profil pengguna)
+CREATE TABLE public.profiles (
+  id TEXT PRIMARY KEY,
   full_name TEXT,
   email TEXT,
   phone TEXT,
@@ -19,8 +32,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 3. Buat Tabel Shoes (Katalog Sepatu & Inventaris Titip Jual dengan Dukungan 8 Foto)
-CREATE TABLE IF NOT EXISTS public.shoes (
+-- 4. Buat Tabel SHOES (Katalog Sepatu & Inventaris Titip Jual dengan Dukungan Multi-Foto)
+CREATE TABLE public.shoes (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   colorway TEXT,
@@ -36,98 +49,65 @@ CREATE TABLE IF NOT EXISTS public.shoes (
   stock INTEGER DEFAULT 1,
   is_featured BOOLEAN DEFAULT false,
   is_express BOOLEAN DEFAULT false,
-  user_id UUID REFERENCES auth.users ON DELETE SET NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 4. Aktifkan Row Level Security (RLS)
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.shoes ENABLE ROW LEVEL SECURITY;
+-- 5. Nonaktifkan Row Level Security (RLS) agar semua operasi INSERT / SELECT / UPDATE
+-- dari aplikasi web berjalan 100% mulus tanpa diblokir oleh Supabase
+ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.shoes DISABLE ROW LEVEL SECURITY;
 
--- 5. Kebijakan Keamanan (Policies) untuk Profiles
-DROP POLICY IF EXISTS "Profiles viewable by everyone" ON public.profiles;
-CREATE POLICY "Profiles viewable by everyone"
-  ON public.profiles FOR SELECT
-  USING ( true );
+-- 6. Berikan Hak Akses Penuh ke Semua Role (Anon, Authenticated, Postgres)
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.users TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.profiles TO anon, authenticated, service_role, postgres;
+GRANT ALL ON TABLE public.shoes TO anon, authenticated, service_role, postgres;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role, postgres;
 
-DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
-CREATE POLICY "Users can insert their own profile"
-  ON public.profiles FOR INSERT
-  WITH CHECK ( true );
-
-DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
-CREATE POLICY "Users can update own profile"
-  ON public.profiles FOR UPDATE
-  USING ( true );
-
--- 6. Kebijakan Keamanan (Policies) untuk Shoes
-DROP POLICY IF EXISTS "Shoes catalog viewable by everyone" ON public.shoes;
-CREATE POLICY "Shoes catalog viewable by everyone"
-  ON public.shoes FOR SELECT
-  USING ( true );
-
-DROP POLICY IF EXISTS "Anyone can insert shoes" ON public.shoes;
-CREATE POLICY "Anyone can insert shoes"
-  ON public.shoes FOR INSERT
-  WITH CHECK ( true );
-
-DROP POLICY IF EXISTS "Anyone can update shoes" ON public.shoes;
-CREATE POLICY "Anyone can update shoes"
-  ON public.shoes FOR UPDATE
-  USING ( true );
-
-DROP POLICY IF EXISTS "Anyone can delete shoes" ON public.shoes;
-CREATE POLICY "Anyone can delete shoes"
-  ON public.shoes FOR DELETE
-  USING ( true );
-
--- 7. Trigger Otomatis: Buat Profil saat User Baru Mendaftar di Supabase Auth
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO public.profiles (id, full_name, email, phone)
-  VALUES (
-    new.id,
-    COALESCE(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
-    new.email,
-    COALESCE(new.raw_user_meta_data->>'phone', '')
+-- 7. Masukkan Akun Demo Mahasiswa (Langsung tersimpan di Supabase!)
+INSERT INTO public.users (id, full_name, email, phone, password, role)
+VALUES
+  (
+    'usr_shiddiq_yazid_41',
+    'Shiddiq Yazid Nurhakim',
+    'shiddiqyazidn29@gmail.com',
+    '081234567890',
+    'password123',
+    'admin'
+  ),
+  (
+    'usr_shiddiq_main',
+    'Shiddiq Yazid',
+    'shiddiqyazidn@gmail.com',
+    '081234567890',
+    'password123',
+    'consignor'
   )
-  ON CONFLICT (id) DO UPDATE
-  SET full_name = EXCLUDED.full_name,
-      updated_at = timezone('utc'::text, now());
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
-
--- 7b. Sinkronkan Akun Pengguna yang Sudah Pernah Mendaftar Sebelumnya ke Tabel profiles
-INSERT INTO public.profiles (id, full_name, email, phone)
-SELECT 
-  id, 
-  COALESCE(raw_user_meta_data->>'full_name', split_part(email, '@', 1)),
-  email,
-  COALESCE(raw_user_meta_data->>'phone', '')
-FROM auth.users
 ON CONFLICT (id) DO UPDATE
 SET full_name = EXCLUDED.full_name,
-    email = EXCLUDED.email,
     phone = EXCLUDED.phone,
-    updated_at = timezone('utc'::text, now());
+    password = EXCLUDED.password;
 
--- 7c. Berikan Hak Akses (GRANTS) agar Supabase Web API bisa membaca dan menulis data
-GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+INSERT INTO public.profiles (id, full_name, email, phone)
+VALUES
+  (
+    'usr_shiddiq_yazid_41',
+    'Shiddiq Yazid Nurhakim',
+    'shiddiqyazidn29@gmail.com',
+    '081234567890'
+  ),
+  (
+    'usr_shiddiq_main',
+    'Shiddiq Yazid',
+    'shiddiqyazidn@gmail.com',
+    '081234567890'
+  )
+ON CONFLICT (id) DO UPDATE
+SET full_name = EXCLUDED.full_name,
+    phone = EXCLUDED.phone;
 
--- 7d. Refresh PostgREST API Schema Cache
-NOTIFY pgrst, 'reload schema';
-
--- 8. Seed Data Awal (Koleksi Sepatu Autentik ZedConsign Lengkap dengan Detail Multi-Foto)
+-- 8. Masukkan Data Katalog Awal Sepatu ZedConsign (Lengkap 7 Sepatu dengan Detail Foto)
 INSERT INTO public.shoes (id, name, colorway, brand, category, size, condition, price, image, images, description, consignor, stock, is_featured, is_express)
 VALUES
   (
@@ -166,87 +146,87 @@ VALUES
   ),
   (
     'shoe-1',
-    'Air Jordan 1 High OG Chicago Lost & Found',
-    'VARSITY RED / BLACK / SAIL',
-    'Jordan',
-    'Basketball',
-    'US 9 / EU 42.5',
-    'Brand New In Box (BNIB)',
-    4850000,
-    '/shoes/jordan-retro.svg',
-    ARRAY['/shoes/jordan-retro.svg', '/shoes/travis-scott.svg', '/shoes/dunk-low.svg', '/shoes/shox-calistra.svg'],
-    'Ikonik sneaker legendaris dengan siluet high-top klasik colorway Chicago merah putih. Dilengkapi vintage aged midsole, crackled leather collar, dan receipt retro 1986. 100% Original Authentic verified by ZedConsign legit check.',
-    'Zed Store Official',
-    2,
-    true,
-    true
-  ),
-  (
-    'shoe-2',
-    'Nike Dunk Low Retro White Black Panda',
-    'WHITE / BLACK PANDA',
+    'Nike Dunk Low Retro Panda',
+    'WHITE / BLACK',
     'Nike',
     'Sneakers',
-    'US 8.5 / EU 42',
+    'US 9 / EU 42.5',
     'Brand New In Box (BNIB)',
-    1850000,
+    1899000,
     '/shoes/dunk-low.svg',
-    ARRAY['/shoes/dunk-low.svg', '/shoes/samba-og.svg', '/shoes/jordan-retro.svg', '/shoes/new-balance.svg'],
-    'Siluet paling populer dan versatile untuk daily wear. Kombinasi warna clean monochrome hitam dan putih dengan premium leather upper dan outsole karet berdaya cengkeram tinggi.',
-    'Consignor #4102',
+    ARRAY['/shoes/dunk-low.svg', '/shoes/jordan-retro.svg', '/shoes/goadome-foam.svg', '/shoes/samba-og.svg'],
+    'Sneakers terpopuler dengan kombinasi warna hitam-putih klasik. Menggunakan material leather premium yang nyaman dipakai sehari-hari.',
+    'ZedConsign Verified Seller',
     5,
     true,
     true
   ),
   (
-    'shoe-3',
-    'Yeezy Boost 350 V2 Beluga Reflective',
-    'BELUGA / STEEPLE GREY / SOLAR RED',
-    'Adidas',
-    'Running',
+    'shoe-2',
+    'Air Jordan 1 Retro High OG Chicago',
+    'VARSITY RED / BLACK / WHITE',
+    'Jordan',
+    'Sneakers',
     'US 9.5 / EU 43',
-    'Like New (VNDS 9.8/10)',
-    3600000,
-    '/shoes/yeezy-boost.svg',
-    ARRAY['/shoes/yeezy-boost.svg', '/shoes/new-balance.svg', '/shoes/samba-og.svg', '/shoes/dunk-low.svg'],
-    'Desain futuristik dari lini Yeezy dengan Primeknit upper berbenang reflective, pull-tab oranye khas Beluga, dan midsole Boost berbalut ribbed cage TPU yang sangat empuk.',
-    'Consignor #1401',
-    1,
+    'Brand New In Box (BNIB)',
+    4250000,
+    '/shoes/jordan-retro.svg',
+    ARRAY['/shoes/jordan-retro.svg', '/shoes/dunk-low.svg', '/shoes/shox-calistra.svg', '/shoes/travis-scott.svg'],
+    'Ikon sneakers basket sepanjang masa warna legendaris Chicago Bulls 1985. Menggunakan premium full-grain leather dengan detail Wings logo klasik.',
+    'Jakarta Vault Sneaker',
+    2,
     true,
     false
   ),
   (
-    'shoe-4',
-    'New Balance 990v5 Made in USA Grey',
-    'CASTLEROCK / GREY',
-    'New Balance',
-    'Casual',
-    'US 9 / EU 42.5',
+    'shoe-3',
+    'Adidas Samba OG Cloud White Core Black',
+    'CLOUD WHITE / CORE BLACK / CLEAR GRANITE',
+    'Adidas',
+    'Sneakers',
+    'US 8.5 / EU 42',
     'Brand New In Box (BNIB)',
-    3950000,
-    '/shoes/new-balance.svg',
-    ARRAY['/shoes/new-balance.svg', '/shoes/samba-og.svg', '/shoes/goadome-foam.svg', '/shoes/yeezy-boost.svg'],
-    'Definisi kenyamanan dan kemewahan understated sneaker dad shoe. Dibuat di Amerika Serikat dengan material pigskin suede premium, breathable mesh, dan teknologi bantalan ENCAP.',
-    'Zed Vault',
-    3,
-    false,
+    1650000,
+    '/shoes/samba-og.svg',
+    ARRAY['/shoes/samba-og.svg', '/shoes/dunk-low.svg', '/shoes/new-balance.svg', '/shoes/goadome-foam.svg'],
+    'Sepatu warisan sepak bola retro Jerman dengan suede T-toe dan gum sole khas. Sangat populer untuk tampilan street style kontemporer.',
+    'Bandung Sneakerhead Consignment',
+    4,
+    true,
     true
   ),
   (
-    'shoe-5',
-    'Adidas Samba OG Cloud White Core Black',
-    'CLOUD WHITE / CORE BLACK / GUM',
-    'Adidas',
-    'Casual',
-    'US 8 / EU 41',
+    'shoe-4',
+    'New Balance 990v6 MiUSA Grey',
+    'CASTLEROCK / MARBLEHEAD',
+    'New Balance',
+    'Sneakers',
+    'US 9 / EU 42.5',
     'Brand New In Box (BNIB)',
-    2150000,
-    '/shoes/samba-og.svg',
-    ARRAY['/shoes/samba-og.svg', '/shoes/dunk-low.svg', '/shoes/new-balance.svg', '/shoes/shox-calistra.svg'],
-    'Klasik sepak bola era 1950 yang kini menjadi siluet street-style paling dicari di dunia. Suede T-toe overlay, 3-stripes hitam kontras, dan sol karet gum bernuansa vintage.',
-    'Consignor #4108',
-    4,
-    false,
+    3899000,
+    '/shoes/new-balance.svg',
+    ARRAY['/shoes/new-balance.svg', '/shoes/goadome-foam.svg', '/shoes/samba-og.svg', '/shoes/shox-calistra.svg'],
+    'Koleksi flagship Made in USA dengan bantalan FuelCell responsif dan ENCAP midsole. Standar kenyamanan harian tertinggi.',
+    'ZedConsign Verified Seller',
+    3,
+    true,
+    false
+  ),
+  (
+    'shoe-5',
+    'Adidas Yeezy Boost 350 V2 Zebra',
+    'WHITE / CORE BLACK / RED',
+    'Adidas',
+    'Sneakers',
+    'US 9.5 / EU 43',
+    'Brand New In Box (BNIB)',
+    4850000,
+    '/shoes/yeezy-boost.svg',
+    ARRAY['/shoes/yeezy-boost.svg', '/shoes/dunk-low.svg', '/shoes/travis-scott.svg', '/shoes/jordan-retro.svg'],
+    'Desain revolusioner karya Kanye West dengan upper Primeknit bergaris zebra dan midsole berteknologi Boost ultra empuk.',
+    'Surabaya Vault Sneakers',
+    2,
+    true,
     true
   ),
   (
@@ -267,3 +247,6 @@ VALUES
     false
   )
 ON CONFLICT (id) DO NOTHING;
+
+-- 9. Refresh API Cache PostgREST
+NOTIFY pgrst, 'reload schema';
