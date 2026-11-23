@@ -3,103 +3,25 @@ import { formatRupiah } from '../data/shoes.js'
 
 const ORDERS_STORAGE_KEY = 'zedconsign_user_orders_v1'
 
-const DEFAULT_SAMPLE_ORDERS = [
-  {
-    id: 'ORD-ZC-2026-9812',
-    date: '23 November 2026, 14:30 WIB',
-    shoeId: 'shoe-shox',
-    shoeName: 'Nike Shox Z Calistra',
-    shoeBrand: 'Nike',
-    shoeImage: '/shoes/shox-calistra.svg',
-    shoeImages: [
-      '/shoes/shox-calistra.svg',
-      '/shoes/goadome-foam.svg',
-      '/shoes/dunk-low.svg',
-      '/shoes/jordan-retro.svg',
-    ],
-    size: 'US 7W / EU 38',
-    condition: 'Brand New In Box (BNIB)',
-    price: 2899000,
-    shippingCost: 45000,
-    shippingType: '⚡ Express Shipping (1-2 Hari Kerja dari Vault)',
-    trackingNumber: 'JNE-ZC28990141ID',
-    courier: 'JNE Express x ZedConsign Courier',
-    status: 'Dikirim', // 'Menunggu Pembayaran' | 'Diproses di Vault' | 'Dikirim' | 'Selesai'
-    buyerName: 'Shiddiq Yazid Nurhakim',
-    buyerPhone: '081234567890',
-    shippingAddress: 'Jl. Prof. Soedarto No. 13, Tembalang, Kota Semarang, Jawa Tengah 50275',
-    paymentMethod: 'QRIS Real-Time BCA',
-    vaultVerificationTag: 'ZC-AUTH-994182-VAULT',
-    verifiedBy: 'Chief Authenticator ZedConsign Vault',
-  },
-  {
-    id: 'ORD-ZC-2026-7451',
-    date: '21 November 2026, 09:15 WIB',
-    shoeId: 'shoe-1',
-    shoeName: 'Nike Dunk Low Retro Panda',
-    shoeBrand: 'Nike',
-    shoeImage: '/shoes/dunk-low.svg',
-    shoeImages: [
-      '/shoes/dunk-low.svg',
-      '/shoes/jordan-retro.svg',
-      '/shoes/goadome-foam.svg',
-      '/shoes/samba-og.svg',
-    ],
-    size: 'US 9 / EU 42.5',
-    condition: 'Brand New In Box (BNIB)',
-    price: 1899000,
-    shippingCost: 20000,
-    shippingType: '📦 Standard Shipping (3-5 Hari Kerja)',
-    trackingNumber: 'SICEPAT-ZC18990210ID',
-    courier: 'SiCepat Cargo Reguler',
-    status: 'Selesai',
-    buyerName: 'Shiddiq Yazid Nurhakim',
-    buyerPhone: '081234567890',
-    shippingAddress: 'Jl. Prof. Soedarto No. 13, Tembalang, Kota Semarang, Jawa Tengah 50275',
-    paymentMethod: 'BCA Virtual Account',
-    vaultVerificationTag: 'ZC-AUTH-189902-VAULT',
-    verifiedBy: 'Senior Authenticator ZedConsign Vault',
-  },
-  {
-    id: 'ORD-ZC-2026-6120',
-    date: '23 November 2026, 16:45 WIB',
-    shoeId: 'shoe-0',
-    shoeName: 'Nike Air Max Goadome Low Foam',
-    shoeBrand: 'Nike',
-    shoeImage: '/shoes/goadome-foam.svg',
-    shoeImages: [
-      '/shoes/goadome-foam.svg',
-      '/shoes/shox-calistra.svg',
-      '/shoes/new-balance.svg',
-      '/shoes/yeezy-boost.svg',
-    ],
-    size: 'US 9 / EU 42.5',
-    condition: 'Brand New In Box (BNIB)',
-    price: 3299000,
-    shippingCost: 45000,
-    shippingType: '⚡ Express Shipping (1-2 Hari Kerja dari Vault)',
-    trackingNumber: 'JNE-ZC32990442ID',
-    courier: 'JNE Express x ZedConsign Courier',
-    status: 'Diproses di Vault',
-    buyerName: 'oco',
-    buyerPhone: '08999111',
-    shippingAddress: 'Jl. Jenderal Sudirman No. 41, Senayan, Jakarta Selatan 10210',
-    paymentMethod: 'QRIS Gopay / BCA',
-    vaultVerificationTag: 'ZC-AUTH-329904-VAULT',
-    verifiedBy: 'Authenticity Inspection Lab Team',
-  },
-]
-
 function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
   const [orders, setOrders] = useState(() => {
     try {
       const saved = localStorage.getItem(ORDERS_STORAGE_KEY)
       if (saved) {
         const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        if (Array.isArray(parsed)) {
+          // Bersihkan sample mock bawaan lama (ORD-ZC-2026-9812 dll) agar benar-benar kosong jika belum pesan
+          const realOrders = parsed.filter(
+            (o) =>
+              o.id !== 'ORD-ZC-2026-9812' &&
+              o.id !== 'ORD-ZC-2026-7451' &&
+              o.id !== 'ORD-ZC-2026-6120'
+          )
+          return realOrders
+        }
       }
     } catch {}
-    return DEFAULT_SAMPLE_ORDERS
+    return []
   })
 
   const [selectedStatus, setSelectedStatus] = useState('all')
@@ -116,8 +38,86 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
     }
   }, [orders])
 
-  // Filter orders
-  const filteredOrders = orders.filter((order) => {
+  // =========================================================================
+  // KONDISI 1: JIKA BELUM LOGIN -> TAMPILKAN EMPTY STATE KUNCI LOGIN (TIDAK ADA PESANAN)
+  // =========================================================================
+  if (!currentUser) {
+    return (
+      <div style={{ maxWidth: '640px', margin: '40px auto 80px', padding: '0 16px', textAlign: 'center' }}>
+        <div
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '20px',
+            padding: '48px 24px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
+          }}
+        >
+          <div
+            style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '50%',
+              background: 'rgba(56, 189, 248, 0.1)',
+              color: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '32px',
+              margin: '0 auto 20px',
+            }}
+          >
+            🔒
+          </div>
+          <h2 style={{ fontSize: '22px', fontWeight: '800', margin: '0 0 10px', color: 'var(--text-main)' }}>
+            Belum Ada Pesanan
+          </h2>
+          <p
+            style={{
+              fontSize: '14px',
+              color: 'var(--text-dim)',
+              margin: '0 auto 28px',
+              maxWidth: '420px',
+              lineHeight: '1.6',
+            }}
+          >
+            Anda belum masuk ke akun. Silakan masuk atau daftar terlebih dahulu untuk melihat daftar pesanan,
+            status verifikasi kurasi Vault, dan nomor resi pengiriman Anda.
+          </p>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => onOpenAuth && onOpenAuth('login')}
+              style={{ padding: '12px 28px', fontSize: '14px' }}
+            >
+              Masuk / Daftar Akun
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={onNavigateCatalog}
+              style={{ padding: '12px 24px', fontSize: '14px' }}
+            >
+              Jelajahi Katalog
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Filter pesanan hanya milik user yang sedang login
+  const userOrders = orders.filter((order) => {
+    if (order.userId && order.userId === currentUser.id) return true
+    if (order.userEmail && order.userEmail.toLowerCase() === currentUser.email?.toLowerCase()) return true
+    if (order.buyerPhone && currentUser.phone && order.buyerPhone === currentUser.phone) return true
+    if (order.buyerName && currentUser.fullName && order.buyerName.toLowerCase() === currentUser.fullName.toLowerCase()) return true
+    return false
+  })
+
+  // Filter berdasarkan search query dan tab status
+  const filteredOrders = userOrders.filter((order) => {
     const matchStatus =
       selectedStatus === 'all' ||
       order.status.toLowerCase().includes(selectedStatus.toLowerCase())
@@ -145,6 +145,65 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
       default:
         return { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' }
     }
+  }
+
+  // =========================================================================
+  // KONDISI 2: USER SUDAH LOGIN TAPI BELUM PERNAH MEMESAN -> KOSONG
+  // =========================================================================
+  if (userOrders.length === 0) {
+    return (
+      <div style={{ maxWidth: '640px', margin: '40px auto 80px', padding: '0 16px', textAlign: 'center' }}>
+        <div
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '20px',
+            padding: '48px 24px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
+          }}
+        >
+          <div
+            style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '50%',
+              background: 'rgba(0, 223, 162, 0.1)',
+              color: 'var(--accent)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '32px',
+              margin: '0 auto 20px',
+            }}
+          >
+            🛍️
+          </div>
+          <h2 style={{ fontSize: '22px', fontWeight: '800', margin: '0 0 10px', color: 'var(--text-main)' }}>
+            Belum Ada Riwayat Pesanan
+          </h2>
+          <p
+            style={{
+              fontSize: '14px',
+              color: 'var(--text-dim)',
+              margin: '0 auto 28px',
+              maxWidth: '440px',
+              lineHeight: '1.6',
+            }}
+          >
+            Halo, <strong>{currentUser.fullName || currentUser.email}</strong>! Anda belum melakukan pemesanan
+            sepatu apapun. Silakan checkout produk pilihan Anda di katalog untuk mulai memantau pesanan di sini.
+          </p>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={onNavigateCatalog}
+            style={{ padding: '12px 28px', fontSize: '14px' }}
+          >
+            Mulai Belanja di Katalog Sepatu
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -175,6 +175,8 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
         trackingNumber: `ZC-${shippingMethod === 'express' ? 'EXP' : 'REG'}-${Math.floor(100000 + Math.random() * 900000)}ID`,
         courier: shippingMethod === 'express' ? 'JNE Express x ZedConsign Courier' : 'SiCepat Cargo Reguler',
         status: 'Diproses di Vault',
+        userId: currentUser?.id,
+        userEmail: currentUser?.email,
         buyerName: buyerName || (currentUser?.fullName || 'Member ZedConsign'),
         buyerPhone: buyerPhone || (currentUser?.phone || '081234567890'),
         shippingAddress: shippingAddress || 'Jl. Prof. Soedarto No. 13, Tembalang, Kota Semarang, Jawa Tengah 50275',
