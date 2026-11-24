@@ -2546,6 +2546,27 @@ function ManageShoes({
                     onChange={(e) => setFormData({ ...formData, size: e.target.value })}
                     required
                   />
+                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
+                    {['US 7 / EU 40', 'US 8 / EU 41', 'US 8.5 / EU 42', 'US 9 / EU 42.5', 'US 9.5 / EU 43', 'US 10 / EU 44', 'US 11 / EU 45'].map((sz) => (
+                      <button
+                        key={sz}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, size: sz })}
+                        style={{
+                          padding: '2px 6px',
+                          fontSize: '10.5px',
+                          borderRadius: '4px',
+                          border: formData.size === sz ? '1.5px solid #006b52' : '1px solid #cbd5e1',
+                          background: formData.size === sz ? '#ecfdf5' : '#ffffff',
+                          color: formData.size === sz ? '#006b52' : '#475569',
+                          fontWeight: formData.size === sz ? '700' : '500',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {sz.split('/')[0].trim()}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="form-group">

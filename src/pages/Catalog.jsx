@@ -728,17 +728,38 @@ function Catalog({
 
                   <div>
                     <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
-                      Ukuran / Size (US / EU) *
+                      Ukuran / Size Sepatu (US / EU) *
                     </label>
                     <input
                       type="text"
                       className="form-input"
-                      placeholder="US 9 / EU 42.5"
+                      placeholder="Contoh: US 9.5 / EU 43"
                       value={addFormData.size}
                       onChange={(e) => setAddFormData({ ...addFormData, size: e.target.value })}
                       required
                       style={{ background: '#fff' }}
                     />
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '6px' }}>
+                      {['US 7 / EU 40', 'US 8 / EU 41', 'US 8.5 / EU 42', 'US 9 / EU 42.5', 'US 9.5 / EU 43', 'US 10 / EU 44', 'US 11 / EU 45'].map((sz) => (
+                        <button
+                          key={sz}
+                          type="button"
+                          onClick={() => setAddFormData({ ...addFormData, size: sz })}
+                          style={{
+                            padding: '2px 6px',
+                            fontSize: '10.5px',
+                            borderRadius: '4px',
+                            border: addFormData.size === sz ? '1.5px solid #006b52' : '1px solid #cbd5e1',
+                            background: addFormData.size === sz ? '#ecfdf5' : '#ffffff',
+                            color: addFormData.size === sz ? '#006b52' : '#475569',
+                            fontWeight: addFormData.size === sz ? '700' : '500',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {sz.split('/')[0].trim()}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 

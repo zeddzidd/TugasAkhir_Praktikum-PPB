@@ -331,7 +331,7 @@ function ConsignInfo({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Ukuran / Size (US / EU) *</label>
+              <label className="form-label">Ukuran / Size Sepatu (1 Pasang / 1 pc) *</label>
               <input
                 type="text"
                 required
@@ -340,6 +340,30 @@ function ConsignInfo({
                 value={size}
                 onChange={(e) => setSize(e.target.value)}
               />
+              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '6px' }}>
+                {['US 7 / EU 40', 'US 8 / EU 41', 'US 8.5 / EU 42', 'US 9 / EU 42.5', 'US 9.5 / EU 43', 'US 10 / EU 44', 'US 10.5 / EU 44.5', 'US 11 / EU 45'].map((sz) => (
+                  <button
+                    key={sz}
+                    type="button"
+                    onClick={() => setSize(sz)}
+                    style={{
+                      padding: '3px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: size === sz ? '1.5px solid #006b52' : '1px solid #cbd5e1',
+                      background: size === sz ? '#ecfdf5' : '#ffffff',
+                      color: size === sz ? '#006b52' : '#475569',
+                      fontWeight: size === sz ? '700' : '500',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {sz.split('/')[0].trim()}
+                  </button>
+                ))}
+              </div>
+              <small style={{ color: '#64748b', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                Pilih ukuran di atas atau ketik manual. Data ukuran ini yang akan tampil di katalog (1 pc ready stock).
+              </small>
             </div>
 
             <div className="form-group">

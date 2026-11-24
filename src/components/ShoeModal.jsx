@@ -2,30 +2,9 @@ import { useState, useEffect, useMemo } from 'react'
 import { formatRupiah } from '../data/shoes.js'
 import { saveOrder } from '../lib/orders.js'
 
-// Standard Sneaker Size Grid Data (Derived from Kick Avenue Catalog)
-const BASE_SIZES_DATA = [
-  { us: '4', eu: '36', uk: '3.5', cm: '22.0', mult: 0.94, express: true, bestPrice: false },
-  { us: '4.5', eu: '36.5', uk: '4', cm: '22.5', mult: 0.96, express: true, bestPrice: false },
-  { us: '5', eu: '37.5', uk: '4.5', cm: '23.0', mult: 0.98, express: true, bestPrice: false },
-  { us: '5.5', eu: '38', uk: '5', cm: '23.5', mult: 1.0, express: true, bestPrice: false },
-  { us: '6', eu: '38.5', uk: '5.5', cm: '24.0', mult: 1.02, express: true, bestPrice: false },
-  { us: '6.5', eu: '39', uk: '6', cm: '24.5', mult: 0.92, express: true, bestPrice: false },
-  { us: '7', eu: '40', uk: '6.5', cm: '25.0', mult: 0.98, express: true, bestPrice: false },
-  { us: '7.5', eu: '40.5', uk: '7', cm: '25.5', mult: 0.99, express: true, bestPrice: false },
-  { us: '8', eu: '41', uk: '7.5', cm: '26.0', mult: 1.0, express: true, bestPrice: false },
-  { us: '8.5', eu: '42', uk: '8', cm: '26.5', mult: 1.0, express: true, bestPrice: true },
-  { us: '9', eu: '42.5', uk: '8.5', cm: '27.0', mult: 1.0, express: true, bestPrice: true },
-  { us: '9.5', eu: '43', uk: '9', cm: '27.5', mult: 1.02, express: true, bestPrice: true },
-  { us: '10', eu: '44', uk: '9.5', cm: '28.0', mult: 1.03, express: true, bestPrice: true },
-  { us: '10.5', eu: '44.5', uk: '10', cm: '28.5', mult: 1.05, express: true, bestPrice: false },
-  { us: '11', eu: '45', uk: '10.5', cm: '29.0', mult: 1.08, express: true, bestPrice: false },
-  { us: '12', eu: '46', uk: '11.5', cm: '30.0', mult: 1.15, express: true, bestPrice: false },
-  { us: '13', eu: '47.5', uk: '12.5', cm: '31.0', mult: 1.25, express: false, bestPrice: false },
-]
-
 function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }) {
   const [sizeUnit, setSizeUnit] = useState('US') // 'US' | 'EU' | 'UK'
-  const [selectedSizeIndex, setSelectedSizeIndex] = useState(10) // Default to US 9
+  const [selectedSizeIndex, setSelectedSizeIndex] = useState(0) // Default to first available size
   const [shippingMethod, setShippingMethod] = useState(shoe?.isExpress ? 'express' : 'standard') // 'express' | 'standard'
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [bookmarkCount, setBookmarkCount] = useState(24)
@@ -284,24 +263,76 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose, showCheckoutModal, showSizeChart, shoePhotos.length])
 
-  // Computed size items for this shoe
+  // Computed size items derived specifically from uploaded shoe data (1 pc / uploaded size)
   const sizeItems = useMemo(() => {
-    const basePrice = shoe ? shoe.price : 2000000
-    return BASE_SIZES_DATA.map((item) => {
-      const price = Math.round((basePrice * item.mult) / 1000) * 1000
-      const strikePrice = Math.round((basePrice * item.mult * 1.24) / 1000) * 1000
-      return {
-        ...item,
-        price,
-        strikePrice,
-      }
-    })
+    if (!shoe) return []
+
+    // 1. Jika data sepatu memiliki array sizes khusus
+    if (Array.isArray(shoe.sizes) && shoe.sizes.length > 0) {
+      return shoe.sizes.map((item, idx) => {
+        const szStr = typeof item === 'string' ? item : item.size || item.us || item.label || 'US 9'
+        const szPrice = typeof item === 'object' && item.price ? Number(item.price) : Number(shoe.price) || 0
+        const szStock = typeof item === 'object' && item.stock !== undefined ? Number(item.stock) : (Number(shoe.stock) || 1)
+        return {
+          id: idx,
+          label: szStr,
+          us: szStr,
+          eu: szStr,
+          uk: szStr,
+          price: szPrice,
+          strikePrice: Math.round(szPrice * 1.15),
+          stock: szStock,
+          express: Boolean(shoe.isExpress),
+          bestPrice: true,
+        }
+      })
+    }
+
+    // 2. Gunakan data ukuran asli yang diupload (shoe.size)
+    const shoeSize = shoe.size ? shoe.size.trim() : 'US 9 / EU 42.5'
+    const shoePrice = Number(shoe.price) || 0
+    const shoeStock = Number(shoe.stock) > 0 ? Number(shoe.stock) : 1
+
+    // Jika shoe.size berisi koma (misal user menulis: "US 9, US 10")
+    if (shoeSize.includes(',')) {
+      return shoeSize.split(',').map((s, idx) => {
+        const trimmed = s.trim()
+        return {
+          id: idx,
+          label: trimmed,
+          us: trimmed,
+          eu: trimmed,
+          uk: trimmed,
+          price: shoePrice,
+          strikePrice: Math.round(shoePrice * 1.15),
+          stock: shoeStock,
+          express: Boolean(shoe.isExpress),
+          bestPrice: true,
+        }
+      })
+    }
+
+    // Tepat 1 PC / 1 Pasang sesuai data upload
+    return [
+      {
+        id: 0,
+        label: shoeSize,
+        us: shoeSize,
+        eu: shoeSize,
+        uk: shoeSize,
+        price: shoePrice,
+        strikePrice: Math.round(shoePrice * 1.15),
+        stock: shoeStock,
+        express: Boolean(shoe.isExpress),
+        bestPrice: true,
+      },
+    ]
   }, [shoe])
 
   if (!shoe) return null
 
-  const selectedSize = sizeItems[selectedSizeIndex] || sizeItems[10]
-  const currentPrice = selectedSize ? selectedSize.price : (shoe ? shoe.price : 2000000)
+  const selectedSize = sizeItems[selectedSizeIndex] || sizeItems[0] || { label: shoe.size || 'One Size', price: Number(shoe.price) || 0 }
+  const currentPrice = selectedSize ? Number(selectedSize.price) : (Number(shoe.price) || 2000000)
   const shippingFee = shippingMethod === 'express' ? 45000 : 20000
   const totalPrice = currentPrice + shippingFee
 
@@ -329,9 +360,11 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
 
   // Label for current size unit
   const getSizeLabel = (item) => {
-    if (sizeUnit === 'EU') return `EU ${item.eu}`
-    if (sizeUnit === 'UK') return `UK ${item.uk}`
-    return `US ${item.us}`
+    if (!item) return shoe?.size || 'One Size'
+    if (item.label) return item.label
+    if (sizeUnit === 'EU' && item.eu) return `EU ${item.eu}`
+    if (sizeUnit === 'UK' && item.uk) return `UK ${item.uk}`
+    return `US ${item.us || item.label || ''}`
   }
 
   // Angle transforms for image preview rotation
@@ -652,13 +685,20 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
                 </div>
               </div>
 
-              {/* 5-Column Size Cards Grid (Exact match to Screenshot 2) */}
-              <div className="ka-size-cards-grid">
+              {/* Size Cards Grid */}
+              <div
+                className="ka-size-cards-grid"
+                style={
+                  sizeItems.length === 1
+                    ? { display: 'grid', gridTemplateColumns: 'minmax(200px, 300px)' }
+                    : undefined
+                }
+              >
                 {sizeItems.map((item, index) => {
                   const isSelected = index === selectedSizeIndex
                   return (
                     <div
-                      key={item.us}
+                      key={item.id ?? index}
                       className={`ka-size-card ${isSelected ? 'selected' : ''}`}
                       onClick={() => setSelectedSizeIndex(index)}
                       title={`Pilih ${getSizeLabel(item)} - ${formatRupiah(item.price)}`}
@@ -674,20 +714,39 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
                         {formatRupiah(item.price)}
                       </div>
 
-                      {/* Bottom: Strikethrough Retail or Best Price Tag */}
+                      {/* Bottom: Stock status or Best Price Tag */}
                       <div className="ka-size-card-bottom">
-                        {item.bestPrice ? (
-                          <span className="ka-best-price-tag">Best Price</span>
-                        ) : (
-                          <span className="ka-strike-price">
-                            {formatRupiah(item.strikePrice)}
-                          </span>
-                        )}
+                        <span className="ka-best-price-tag">
+                          {Number(item.stock) > 1 ? `Stok: ${item.stock} Pairs` : 'Tersedia 1 Pasang (1 pc)'}
+                        </span>
                       </div>
                     </div>
                   )
                 })}
               </div>
+
+              {sizeItems.length === 1 && (
+                <div
+                  style={{
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    marginTop: '10px',
+                    fontSize: '12px',
+                    color: '#475569',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <span style={{ fontSize: '14px' }}>👟</span>
+                  <span>
+                    Unit ini tersedia <strong>1 pasang (1 pc)</strong> dengan ukuran{' '}
+                    <strong>{getSizeLabel(sizeItems[0])}</strong> &bull; Kondisi <strong>{shoe.condition}</strong>.
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons: Bookmark | Sell | Buy or Offer */}
