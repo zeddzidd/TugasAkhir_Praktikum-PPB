@@ -195,7 +195,7 @@ function Catalog({
     }
     setAddFormData({
       ...INITIAL_ADD_FORM,
-      consignor: currentUser.fullName ? `${currentUser.fullName} (Admin Vault)` : 'ZedConsign Vault Admin',
+      consignor: currentUser.fullName ? currentUser.fullName : 'ZedConsign Verified Seller',
     })
     setAddErrorMsg('')
     setIsAddModalOpen(true)
@@ -371,15 +371,17 @@ function Catalog({
               <span>{isAdminUser(currentUser) ? '+ Tambah Sepatu' : 'Titip Jual Sepatu'}</span>
             </button>
 
-            <button
-              type="button"
-              className="btn-manage-quick"
-              onClick={onNavigateManage}
-              title={isAdminUser(currentUser) ? "Portal Admin Vault & Kelola Inventaris" : "Kelola Inventaris (Khusus Admin)"}
-            >
-              <span className="btn-icon">{isAdminUser(currentUser) ? '🛡️' : '🔒'}</span>
-              <span>{isAdminUser(currentUser) ? 'Admin Vault' : 'Kelola'}</span>
-            </button>
+            {isAdminUser(currentUser) && (
+              <button
+                type="button"
+                className="btn-manage-quick"
+                onClick={onNavigateManage}
+                title="Portal Admin: Kelola & Vault Authentifikasi"
+              >
+                <span className="btn-icon">🛡️</span>
+                <span>Admin Vault</span>
+              </button>
+            )}
           </div>
 
           <div className="section-sort-wrap">

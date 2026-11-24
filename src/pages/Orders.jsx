@@ -580,6 +580,11 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
                         Resi ({order.courier}): {order.trackingNumber}
                       </div>
                     )}
+                    {order.paymentProof && (
+                      <div style={{ fontSize: '11.5px', color: '#00dfa2', marginTop: '4px', fontWeight: '800' }}>
+                        📷 Bukti Transfer Terlampir
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ textAlign: 'right', minWidth: '150px' }}>
@@ -968,6 +973,35 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
                 <span>{formatRupiah(selectedOrderDetail.price + selectedOrderDetail.shippingCost)}</span>
               </div>
             </div>
+
+            {/* Lampiran Foto Bukti Transfer */}
+            {selectedOrderDetail.paymentProof && (
+              <div
+                style={{
+                  background: 'rgba(0, 223, 162, 0.05)',
+                  border: '1px solid rgba(0, 223, 162, 0.25)',
+                  borderRadius: '12px',
+                  padding: '14px',
+                  marginBottom: '20px',
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: '800', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  📷 Foto Bukti Pembayaran Terlampir
+                </div>
+                <img
+                  src={selectedOrderDetail.paymentProof}
+                  alt="Bukti Transfer"
+                  style={{
+                    maxHeight: '160px',
+                    maxWidth: '100%',
+                    objectFit: 'contain',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                  }}
+                />
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '10px' }}>

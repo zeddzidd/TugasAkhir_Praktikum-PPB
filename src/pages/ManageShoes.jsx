@@ -453,22 +453,22 @@ function ManageShoes({
             textAlign: 'center',
           }}
         >
-          {/* Lock Icon */}
+          {/* Service Icon */}
           <div
             style={{
               width: '80px',
               height: '80px',
               margin: '0 auto 20px',
               borderRadius: '50%',
-              background: '#fef2f2',
-              border: '2px solid #fecaca',
+              background: '#ecfdf5',
+              border: '2px solid #a7f3d0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '36px',
             }}
           >
-            🔒
+            🛡️
           </div>
 
           <span
@@ -476,8 +476,8 @@ function ManageShoes({
               display: 'inline-block',
               fontSize: '11px',
               fontWeight: '800',
-              color: '#dc2626',
-              background: '#fee2e2',
+              color: '#047857',
+              background: '#ecfdf5',
               padding: '4px 12px',
               borderRadius: '9999px',
               letterSpacing: '0.08em',
@@ -485,7 +485,7 @@ function ManageShoes({
               marginBottom: '12px',
             }}
           >
-            Akses Dibatasi &bull; Khusus Administrator
+            Layanan Pengguna &bull; Konsinyasi Terkurasi
           </span>
 
           <h2
@@ -496,7 +496,7 @@ function ManageShoes({
               marginBottom: '12px',
             }}
           >
-            Portal Admin Vault &amp; Kelola Barang
+            Pusat Layanan Konsinyasi &amp; Kurasi Sepatu
           </h2>
 
           <p
@@ -508,10 +508,9 @@ function ManageShoes({
               margin: '0 auto 24px',
             }}
           >
-            Halaman ini dikhususkan bagi{' '}
-            <strong>Administrator &amp; Tim Kurator ZedConsign Vault</strong>{' '}
-            untuk memeriksa pesanan masuk pembeli, menerbitkan instruksi kirim
-            sepatu, serta memeriksa status keaslian fisik sepatu titip jual.
+            Selamat datang di <strong>ZedConsign</strong>. Di sini Anda dapat
+            mendaftarkan koleksi sneakers Anda untuk dititip jualkan, memantau
+            status autentikasi fisik, serta melacak pesanan sepatu yang Anda beli.
             <br />
             {currentUser ? (
               <span
@@ -527,7 +526,7 @@ function ManageShoes({
               >
                 Status Akun:{' '}
                 <strong>
-                  Consignor / Pengguna Publik ({currentUser.fullName || currentUser.email})
+                  Member ({currentUser.fullName || currentUser.email})
                 </strong>
               </span>
             ) : (
@@ -590,7 +589,7 @@ function ManageShoes({
                   ✅ Ajukan Titip Jual (Sell)
                 </strong>
                 <span style={{ color: '#64748b', fontSize: '12px' }}>
-                  Pengguna dapat mendaftarkan sepatu pribadi untuk diverifikasi dan di-ACC oleh Admin Vault.
+                  Pengguna dapat mendaftarkan sepatu pribadi untuk diverifikasi dan di-ACC kurator resmi.
                 </span>
               </div>
               <div
@@ -605,7 +604,7 @@ function ManageShoes({
                   ✅ Beli Sepatu Authentic
                 </strong>
                 <span style={{ color: '#64748b', fontSize: '12px' }}>
-                  Jelajahi dan beli sneakers yang telah 100% lolos ACC kurator resmi.
+                  Jelajahi dan beli sneakers yang telah 100% lolos verifikasi kurator resmi.
                 </span>
               </div>
               <div
@@ -628,14 +627,14 @@ function ManageShoes({
                   background: '#ffffff',
                   padding: '12px 14px',
                   borderRadius: '10px',
-                  border: '1px solid #fee2e2',
+                  border: '1px solid #e2e8f0',
                 }}
               >
-                <strong style={{ color: '#b91c1c', display: 'block', marginBottom: '2px' }}>
-                  ⛔ Kelola Barang &amp; ACC Vault
+                <strong style={{ color: '#0284c7', display: 'block', marginBottom: '2px' }}>
+                  ℹ️ Manajemen Inventaris
                 </strong>
                 <span style={{ color: '#64748b', fontSize: '12px' }}>
-                  Pengguna biasa tidak diizinkan mengubah inventaris umum atau menyetujui pesanan keluar.
+                  Katalog pusat dikelola langsung oleh tim kurasi resmi ZedConsign.
                 </span>
               </div>
             </div>
@@ -691,10 +690,10 @@ function ManageShoes({
                 gap: '6px',
                 transition: 'all 0.15s ease',
               }}
-              title="Khusus Penguji / Asisten Praktikum: Masuk instan sebagai Admin Vault Shiddiq Yazid"
+              title="Khusus Penguji / Asisten Praktikum: Masuk akun pengelola"
             >
               <span>🔑</span>
-              <span>Beralih ke Akun Demo Admin (Shiddiq Yazid)</span>
+              <span>Masuk Mode Evaluator (Shiddiq Yazid)</span>
             </button>
           </div>
         </div>
@@ -1293,8 +1292,13 @@ function ManageShoes({
                         <div style={{ color: '#475569', fontSize: '12px' }}>
                           📍 Alamat: {order.shippingAddress}
                         </div>
-                        <div style={{ color: '#64748b', fontSize: '11.5px', marginTop: '4px' }}>
-                          Metode: <strong>{order.shippingType}</strong> &bull; Bayar: <strong>{order.paymentMethod} (LUNAS)</strong>
+                        <div style={{ color: '#64748b', fontSize: '11.5px', marginTop: '4px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                          <span>Metode: <strong>{order.shippingType}</strong> &bull; Bayar: <strong>{order.paymentMethod} (LUNAS)</strong></span>
+                          {order.paymentProof && (
+                            <span style={{ color: '#047857', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: '4px', fontWeight: '800', fontSize: '11px' }}>
+                              📷 Bukti Bayar Terlampir
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -2413,6 +2417,25 @@ function ManageShoes({
                 <div><strong>Kurir:</strong> {selectedOrderDetail.courier}</div>
                 <div><strong>Nomor Resi:</strong> {selectedOrderDetail.trackingNumber || 'Belum diterbitkan'}</div>
                 <div><strong>Metode Pembayaran:</strong> {selectedOrderDetail.paymentMethod}</div>
+                {selectedOrderDetail.paymentProof && (
+                  <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #e2e8f0' }}>
+                    <strong style={{ color: '#006b52', display: 'block', marginBottom: '6px' }}>
+                      📷 Foto Bukti Bayar Pembeli:
+                    </strong>
+                    <img
+                      src={selectedOrderDetail.paymentProof}
+                      alt="Bukti Transfer Pembeli"
+                      style={{
+                        maxHeight: '180px',
+                        maxWidth: '100%',
+                        objectFit: 'contain',
+                        borderRadius: '8px',
+                        border: '1.5px solid #cbd5e1',
+                        background: '#ffffff',
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

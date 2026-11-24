@@ -56,6 +56,8 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
   const [amountCopied, setAmountCopied] = useState(false)
   const [orderNumber, setOrderNumber] = useState('INV/ZC-2026/8942')
   const [receiptUploaded, setReceiptUploaded] = useState(false)
+  const [paymentProofImage, setPaymentProofImage] = useState('')
+  const [paymentProofError, setPaymentProofError] = useState('')
 
   // Sync buyer info from logged in user
   useEffect(() => {
@@ -153,10 +155,34 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
     }
     const newOrderNum = `INV/ZC-2026/${Math.floor(10000 + Math.random() * 90000)}`
     setOrderNumber(newOrderNum)
+    setPaymentProofError('')
     setCheckoutStep('payment')
   }
 
+  const handleProofUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      setPaymentProofImage(event.target.result)
+      setPaymentProofError('')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleUseSampleProof = () => {
+    const sampleReceiptSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="380" viewBox="0 0 300 380"><rect width="300" height="380" fill="%23f8fafc"/><rect x="15" y="15" width="270" height="350" rx="8" fill="%23ffffff" stroke="%23cbd5e1" stroke-width="2"/><text x="150" y="50" font-family="Arial" font-size="15" font-weight="bold" fill="%230f172a" text-anchor="middle">BUKTI TRANSFER BERHASIL</text><text x="150" y="72" font-family="Arial" font-size="12" fill="%23006b52" font-weight="bold" text-anchor="middle">ZED CONSIGN ESCROW</text><line x1="30" y1="90" x2="270" y2="90" stroke="%23e2e8f0" stroke-width="1.5" stroke-dasharray="4"/><text x="30" y="120" font-family="Arial" font-size="11" fill="%2364748b">Nominal:</text><text x="270" y="120" font-family="Arial" font-size="13" font-weight="bold" fill="%230f172a" text-anchor="end">${formatRupiah(totalPrice)}</text><text x="30" y="150" font-family="Arial" font-size="11" fill="%2364748b">Metode:</text><text x="270" y="150" font-family="Arial" font-size="12" font-weight="bold" fill="%230f172a" text-anchor="end">${paymentMethod === 'qris' ? 'QRIS Instant' : 'Virtual Account'}</text><text x="30" y="180" font-family="Arial" font-size="11" fill="%2364748b">Penerima:</text><text x="270" y="180" font-family="Arial" font-size="12" font-weight="bold" fill="%230f172a" text-anchor="end">PT ZED CONSIGN</text><text x="30" y="210" font-family="Arial" font-size="11" fill="%2364748b">Pengirim:</text><text x="270" y="210" font-family="Arial" font-size="12" font-weight="bold" fill="%230f172a" text-anchor="end">${buyerName || 'Pembeli'}</text><text x="30" y="240" font-family="Arial" font-size="11" fill="%2364748b">Status:</text><text x="270" y="240" font-family="Arial" font-size="12" font-weight="bold" fill="%23059669" text-anchor="end">BERHASIL / LUNAS</text><circle cx="150" cy="300" r="24" fill="%23ecfdf5" stroke="%23a7f3d0"/><text x="150" y="307" font-family="Arial" font-size="20" text-anchor="middle" fill="%23047857">✓</text></svg>`
+    setPaymentProofImage(sampleReceiptSvg)
+    setPaymentProofError('')
+  }
+
   const handleConfirmPaid = () => {
+    if (!paymentProofImage) {
+      setPaymentProofError('Mohon kirim / unggah foto bukti transfer pembayaran terlebih dahulu sebelum melanjutkan!')
+      return
+    }
+    setPaymentProofError('')
+
     try {
       const newOrderRecord = {
         id: orderNumber || `INV/ZC-2026/${Math.floor(10000 + Math.random() * 90000)}`,
@@ -183,6 +209,7 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
         paymentMethod: paymentMethod === 'qris' ? 'QRIS Instant BCA' : paymentMethod.replace('_', ' ').toUpperCase(),
         vaultVerificationTag: `ZC-AUTH-${Math.floor(100000 + Math.random() * 900000)}-VAULT`,
         verifiedBy: 'Chief Authenticator ZedConsign Vault',
+        paymentProof: paymentProofImage,
       }
       saveOrder(newOrderRecord)
     } catch (e) {
@@ -1373,6 +1400,244 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
                     </div>
                   </div>
 
+                  {/* Upload Bukti Pembayaran / Transfer (Wajib) */}
+                  <div
+                    style={{
+                      background: '#ffffff',
+                      border: paymentProofError
+                        ? '2px solid #ef4444'
+                        : paymentProofImage
+                        ? '2px solid #006b52'
+                        : '1.5px dashed #006b52',
+                      borderRadius: '14px',
+                      padding: '18px',
+                      margin: '18px 0',
+                      boxShadow: '0 4px 14px rgba(0,0,0,0.05)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '6px',
+                      }}
+                    >
+                      <label
+                        style={{
+                          fontSize: '13.5px',
+                          fontWeight: '800',
+                          color: '#0f172a',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <span>📸</span>
+                        <span>Upload Foto Bukti Transfer / Bayar * (Wajib)</span>
+                      </label>
+                      {paymentProofImage && (
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: '800',
+                            color: '#047857',
+                            background: '#ecfdf5',
+                            border: '1px solid #a7f3d0',
+                            padding: '3px 10px',
+                            borderRadius: '9999px',
+                          }}
+                        >
+                          ✓ Bukti Terlampir
+                        </span>
+                      )}
+                    </div>
+
+                    <p
+                      style={{
+                        fontSize: '12px',
+                        color: '#64748b',
+                        margin: '0 0 12px',
+                        lineHeight: '1.5',
+                      }}
+                    >
+                      Wajib mengunggah tangkapan layar (screenshot) struk m-Banking,
+                      bukti transfer ATM, atau notifikasi sukses QRIS Anda untuk
+                      dapat melanjutkan ke halaman konfirmasi berikutnya.
+                    </p>
+
+                    {/* Hidden Native File Input */}
+                    <input
+                      type="file"
+                      id="payment-proof-file-input"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={handleProofUpload}
+                    />
+
+                    {/* State A: Belum Unggah */}
+                    {!paymentProofImage ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            document.getElementById('payment-proof-file-input')?.click()
+                          }
+                          style={{
+                            width: '100%',
+                            padding: '18px 14px',
+                            border: '1.5px dashed #006b52',
+                            borderRadius: '10px',
+                            background: 'rgba(0, 107, 82, 0.04)',
+                            color: '#006b52',
+                            fontWeight: '800',
+                            fontSize: '13px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <span style={{ fontSize: '26px' }}>📤</span>
+                          <span>Pilih Foto Bukti Bayar dari Galeri / Kamera</span>
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              color: '#64748b',
+                              fontWeight: '500',
+                            }}
+                          >
+                            Format JPG, PNG, atau WEBP (Maksimal 10MB)
+                          </span>
+                        </button>
+
+                        {/* Quick Demo Sample Button */}
+                        <button
+                          type="button"
+                          onClick={handleUseSampleProof}
+                          style={{
+                            background: '#f8fafc',
+                            border: '1px solid #cbd5e1',
+                            color: '#334155',
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            padding: '9px 12px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                          }}
+                        >
+                          <span>🖼️</span>
+                          <span>Gunakan Sampel Struk Pembayaran Demo</span>
+                        </button>
+                      </div>
+                    ) : (
+                      /* State B: Sudah Unggah (Preview & Action) */
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: '14px',
+                          alignItems: 'center',
+                          background: '#f8fafc',
+                          padding: '12px 14px',
+                          borderRadius: '10px',
+                          border: '1px solid #e2e8f0',
+                        }}
+                      >
+                        <img
+                          src={paymentProofImage}
+                          alt="Bukti Bayar"
+                          style={{
+                            width: '85px',
+                            height: '85px',
+                            objectFit: 'cover',
+                            borderRadius: '8px',
+                            border: '1px solid #cbd5e1',
+                            background: '#fff',
+                          }}
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <strong
+                            style={{
+                              fontSize: '13px',
+                              color: '#0f172a',
+                              display: 'block',
+                              marginBottom: '2px',
+                            }}
+                          >
+                            Foto Bukti Pembayaran Siap Dikirim
+                          </strong>
+                          <span style={{ fontSize: '11.5px', color: '#64748b' }}>
+                            Struk transfer terlampir &bull; Siap diverifikasi oleh tim kurator.
+                          </span>
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                document
+                                  .getElementById('payment-proof-file-input')
+                                  ?.click()
+                              }
+                              style={{
+                                padding: '5px 12px',
+                                fontSize: '11.5px',
+                                fontWeight: '700',
+                                background: '#ffffff',
+                                border: '1px solid #cbd5e1',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Ganti Foto
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPaymentProofImage('')
+                                setPaymentProofError('')
+                              }}
+                              style={{
+                                padding: '5px 12px',
+                                fontSize: '11.5px',
+                                fontWeight: '700',
+                                background: '#fee2e2',
+                                color: '#991b1b',
+                                border: '1px solid #fecaca',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Hapus
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Error Notice */}
+                    {paymentProofError && (
+                      <div
+                        style={{
+                          marginTop: '10px',
+                          background: '#fef2f2',
+                          border: '1px solid #fecaca',
+                          color: '#b91c1c',
+                          fontSize: '12px',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          fontWeight: '700',
+                        }}
+                      >
+                        ⚠️ {paymentProofError}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="checkout-action-row">
                     <button
                       type="button"
@@ -1385,8 +1650,17 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
                       type="button"
                       className="btn-confirm-payment-paid"
                       onClick={handleConfirmPaid}
+                      style={{
+                        background: !paymentProofImage
+                          ? '#94a3b8'
+                          : 'linear-gradient(135deg, #00dfa2 0%, #006b52 100%)',
+                        color: !paymentProofImage ? '#ffffff' : '#0f172a',
+                        cursor: !paymentProofImage ? 'not-allowed' : 'pointer',
+                      }}
                     >
-                      Saya Sudah Membayar (Konfirmasi Pembayaran) ✓
+                      {paymentProofImage
+                        ? 'Saya Sudah Membayar (Lanjut ke Bukti Pesanan) ✓'
+                        : 'Unggah Bukti Bayar Terlebih Dahulu ⚠️'}
                     </button>
                   </div>
                 </div>
@@ -1446,6 +1720,43 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
                           <strong className="receipt-final-amount">{formatRupiah(totalPrice)}</strong>
                         </div>
                       </div>
+
+                      {/* Lampiran Bukti Transfer */}
+                      {paymentProofImage && (
+                        <div
+                          style={{
+                            marginTop: '16px',
+                            background: '#f8fafc',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                            textAlign: 'center',
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              fontWeight: '800',
+                              color: '#006b52',
+                              display: 'block',
+                              marginBottom: '6px',
+                            }}
+                          >
+                            📷 FOTO BUKTI PEMBAYARAN TERLAMPIR:
+                          </span>
+                          <img
+                            src={paymentProofImage}
+                            alt="Bukti Transfer"
+                            style={{
+                              maxHeight: '120px',
+                              maxWidth: '100%',
+                              objectFit: 'contain',
+                              borderRadius: '6px',
+                              border: '1px solid #cbd5e1',
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div className="success-action-buttons">
