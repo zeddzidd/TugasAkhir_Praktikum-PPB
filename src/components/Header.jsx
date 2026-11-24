@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { SUB_NAV_ITEMS } from '../data/shoes.js'
+import { isAdminUser } from '../lib/supabase.js'
 
 function Header({
   activeTab,
@@ -125,9 +126,9 @@ function Header({
               type="button"
               className={`header-nav-link ${activeTab === 'manage' ? 'active' : ''}`}
               onClick={() => onSelectTab('manage')}
-              title="Kelola Data Sepatu"
+              title={isAdminUser(currentUser) ? "Portal Admin: Kelola & Vault Authentifikasi" : "Kelola Inventaris"}
             >
-              Kelola
+              {isAdminUser(currentUser) ? '🛡️ Admin Vault' : 'Kelola'}
             </button>
 
             <button
@@ -252,7 +253,7 @@ function Header({
             <path d="M12 20h9" />
             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
           </svg>
-          <span>Kelola</span>
+          <span>{isAdminUser(currentUser) ? 'Admin' : 'Kelola'}</span>
         </button>
 
         <button

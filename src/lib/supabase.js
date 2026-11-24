@@ -42,8 +42,21 @@ const DEFAULT_DEMO_USER = {
   password: 'password123',
   fullName: 'Shiddiq Yazid Nurhakim',
   phone: '081234567890',
+  role: 'admin',
   createdAt: '2026-09-01T00:00:00.000Z',
   provider: 'system',
+}
+
+/**
+ * Check whether a user has Administrator / Vault Curator privileges
+ */
+export function isAdminUser(user) {
+  if (!user) return false
+  if (user.role === 'admin') return true
+  const email = (user.email || '').toLowerCase()
+  if (email === 'shiddiqyazidn29@gmail.com') return true
+  if (email.startsWith('admin') || email.includes('admin@')) return true
+  return false
 }
 
 // Helper to get all registered users from database
@@ -353,6 +366,7 @@ export async function signInUser({ email, password }) {
         fullName: foundLocal.fullName,
         phone: foundLocal.phone,
         createdAt: foundLocal.createdAt,
+        role: foundLocal.role || (foundLocal.email === 'shiddiqyazidn29@gmail.com' ? 'admin' : 'consignor'),
         provider: foundLocal.provider || 'local-storage',
       },
     }

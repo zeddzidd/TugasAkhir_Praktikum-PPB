@@ -17,12 +17,32 @@ function ShoeCard({ shoe, onSelect }) {
 
         {/* Top Badges */}
         <div className="kick-card-badges">
-          <span className="badge-authentic">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            Authentic
-          </span>
+          {shoe.authStatus === 'pending' ? (
+            <span
+              className="badge-pending-vault"
+              style={{
+                background: '#fef3c7',
+                color: '#92400e',
+                border: '1px solid #fde68a',
+                fontSize: '10px',
+                fontWeight: '800',
+                padding: '3px 8px',
+                borderRadius: '9999px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              ⏳ Menunggu ACC
+            </span>
+          ) : (
+            <span className="badge-authentic">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Authentic
+            </span>
+          )}
 
           {shoe.isExpress ? (
             <span className="badge-express" title="Pengiriman Ekspres 1-2 Hari">

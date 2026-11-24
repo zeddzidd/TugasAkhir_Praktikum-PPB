@@ -16,6 +16,9 @@ import {
   syncShoeToSupabase,
   deleteShoeFromSupabase,
   syncAllShoesToSupabase,
+  signInUser,
+  signUpUser,
+  isAdminUser,
 } from './lib/supabase.js'
 import './App.css'
 
@@ -182,9 +185,29 @@ function App() {
             onSyncSupabase={handleManualSyncSupabase}
             currentUser={currentUser}
             onOpenAuth={(mode) => setAuthModalMode(mode || 'login')}
+            onNavigateConsign={() => handleSelectTab('consign')}
+            onNavigateCatalog={() => handleSelectTab('catalog')}
+            onSwitchToAdmin={async () => {
+              try {
+                const res = await signInUser({
+                  email: 'shiddiqyazidn29@gmail.com',
+                  password: 'password123',
+                }).catch(async () => {
+                  return await signUpUser({
+                    email: 'shiddiqyazidn29@gmail.com',
+                    password: 'password123',
+                    fullName: 'Shiddiq Yazid Nurhakim',
+                    phone: '081234567890',
+                  })
+                })
+                setCurrentUser(res.user)
+              } catch (e) {
+                console.error('Failed to switch to admin:', e)
+              }
+            }}
           />
         )}
-        {tab === 'consign' && currentUser && (
+        {tab === 'consign' && (
           <ConsignInfo
             onAddShoe={handleAddShoe}
             onNavigateCatalog={() => handleSelectTab('catalog')}

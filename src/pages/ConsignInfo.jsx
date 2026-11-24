@@ -86,13 +86,16 @@ function ConsignInfo({
       stock: 1,
       isFeatured: false,
       isExpress: false,
+      authStatus: 'pending', // Menunggu ACC dari Admin Vault
+      submittedAt: new Date().toISOString(),
+      submittedBy: currentUser?.email || 'user',
     }
 
     if (onAddShoe) {
       onAddShoe(newShoe)
     }
 
-    setSuccessMessage(`Sepatu "${newShoe.name}" berhasil didaftarkan dan langsung tayang di katalog ZedConsign dengan ${finalImages.length} foto detail!`)
+    setSuccessMessage(`✓ Pengajuan sepatu "${newShoe.name}" berhasil dikirim ke ZedConsign Vault! Status saat ini: ⏳ Menunggu verifikasi & ACC Legit Check dari Tim Administrator Vault sebelum aktif dijual di katalog.`)
     setName('')
     setPrice('')
     setDescription('')

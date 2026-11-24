@@ -3,6 +3,7 @@ import ShoeCard from '../components/ShoeCard.jsx'
 import ShoeModal from '../components/ShoeModal.jsx'
 import ImageUploader from '../components/ImageUploader.jsx'
 import { CATEGORIES, formatRupiah } from '../data/shoes.js'
+import { isAdminUser } from '../lib/supabase.js'
 
 const POPULAR_BRANDS = ['Nike', 'Jordan', 'Adidas', 'New Balance', 'Asics', 'Puma', 'Vans', 'Converse']
 const CONDITIONS = [
@@ -127,6 +128,10 @@ function Catalog({
   const filteredShoes = useMemo(() => {
     return shoes
       .filter((shoe) => {
+        // Sepatu yang masih 'pending' hanya tampil jika sudah lolos ACC ('verified') atau default, kecuali jika login sebagai Admin
+        const isVerified = shoe.authStatus === 'verified' || !shoe.authStatus
+        if (!isAdminUser(currentUser) && !isVerified) return false
+
         // Search query filter
         const query = searchQuery.trim().toLowerCase()
         const matchesSearch =
@@ -183,9 +188,14 @@ function Catalog({
       if (onOpenAuth) onOpenAuth('login')
       return
     }
+    // Jika bukan Admin, arahkan pengguna ke menu Titip Jual (Sell)
+    if (!isAdminUser(currentUser)) {
+      if (onNavigateConsign) onNavigateConsign()
+      return
+    }
     setAddFormData({
       ...INITIAL_ADD_FORM,
-      consignor: currentUser.fullName ? `${currentUser.fullName} (Consignor)` : 'ZedConsign Verified Seller',
+      consignor: currentUser.fullName ? `${currentUser.fullName} (Admin Vault)` : 'ZedConsign Vault Admin',
     })
     setAddErrorMsg('')
     setIsAddModalOpen(true)
@@ -230,6 +240,9 @@ function Catalog({
       images: finalImages,
       consignor: addFormData.consignor.trim() || (currentUser?.fullName || 'ZedConsign Verified Seller'),
       description: addFormData.description.trim() || 'Sepatu autentik terverifikasi dari kurator ZedConsign Vault.',
+      authStatus: 'verified', // Ditambah oleh admin = langsung terverifikasi Vault
+      verifiedAt: new Date().toISOString(),
+      verifiedBy: currentUser?.fullName || 'Admin Shiddiq Yazid',
     }
 
     if (onAddShoe) {
@@ -352,20 +365,20 @@ function Catalog({
               type="button"
               className="btn-add-shoe-catalog"
               onClick={handleOpenAddModal}
-              title="Tambah sepatu baru langsung ke katalog"
+              title={isAdminUser(currentUser) ? "Tambah sepatu baru langsung ke katalog (Khusus Admin)" : "Ajukan Titip Jual Sepatu Koleksi Anda"}
             >
               <span className="btn-icon">✨</span>
-              <span>+ Tambah Sepatu</span>
+              <span>{isAdminUser(currentUser) ? '+ Tambah Sepatu' : 'Titip Jual Sepatu'}</span>
             </button>
 
             <button
               type="button"
               className="btn-manage-quick"
               onClick={onNavigateManage}
-              title="Kelola Inventaris Sepatu"
+              title={isAdminUser(currentUser) ? "Portal Admin Vault & Kelola Inventaris" : "Kelola Inventaris (Khusus Admin)"}
             >
-              <span className="btn-icon">📋</span>
-              <span>Kelola Inventaris</span>
+              <span className="btn-icon">{isAdminUser(currentUser) ? '🛡️' : '🔒'}</span>
+              <span>{isAdminUser(currentUser) ? 'Admin Vault' : 'Kelola'}</span>
             </button>
           </div>
 
