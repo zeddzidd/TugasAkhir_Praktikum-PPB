@@ -347,51 +347,42 @@ function Catalog({
         </div>
 
         <div className="section-actions-wrap">
-          <select
-            className="filter-sort-select"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            <option value="default">Urutkan: Rekomendasi</option>
-            <option value="price-asc">Harga: Terendah ke Tertinggi</option>
-            <option value="price-desc">Harga: Tertinggi ke Terendah</option>
-            <option value="name-asc">Nama: A - Z</option>
-            <option value="name-desc">Nama: Z - A</option>
-          </select>
+          <div className="section-action-buttons">
+            <button
+              type="button"
+              className="btn-add-shoe-catalog"
+              onClick={handleOpenAddModal}
+              title="Tambah sepatu baru langsung ke katalog"
+            >
+              <span className="btn-icon">✨</span>
+              <span>+ Tambah Sepatu</span>
+            </button>
 
-          <button
-            type="button"
-            className="btn-add-shoe-catalog"
-            onClick={handleOpenAddModal}
-            title="Tambah sepatu baru langsung ke katalog"
-            style={{
-              background: 'linear-gradient(135deg, #0f172a 0%, #006b52 100%)',
-              color: '#ffffff',
-              fontSize: '13px',
-              fontWeight: '700',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              border: '1px solid rgba(0, 223, 162, 0.4)',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 4px 12px rgba(0, 107, 82, 0.25)',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <span style={{ fontSize: '15px' }}>✨</span>
-            <span>+ Tambah Sepatu</span>
-          </button>
+            <button
+              type="button"
+              className="btn-manage-quick"
+              onClick={onNavigateManage}
+              title="Kelola Inventaris Sepatu"
+            >
+              <span className="btn-icon">📋</span>
+              <span>Kelola Inventaris</span>
+            </button>
+          </div>
 
-          <button
-            type="button"
-            className="btn-manage-quick"
-            onClick={onNavigateManage}
-            title="Kelola & Tambah Sepatu"
-          >
-            Kelola Inventaris
-          </button>
+          <div className="section-sort-wrap">
+            <select
+              className="filter-sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              aria-label="Urutkan produk katalog"
+            >
+              <option value="default">Urutkan: Rekomendasi</option>
+              <option value="price-asc">Harga: Terendah ke Tertinggi</option>
+              <option value="price-desc">Harga: Tertinggi ke Terendah</option>
+              <option value="name-asc">Nama: A - Z</option>
+              <option value="name-desc">Nama: Z - A</option>
+            </select>
+          </div>
         </div>
       </section>
 

@@ -704,37 +704,138 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
-.filter-sort-select {
-  background: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #374151;
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.15s ease;
+.section-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.filter-sort-select:focus {
-  border-color: #111827;
-}
-
-.btn-manage-quick {
-  background: #111827;
+.btn-add-shoe-catalog {
+  background: linear-gradient(135deg, #0f172a 0%, #006b52 100%);
   color: #ffffff;
   font-size: 13px;
   font-weight: 700;
   padding: 8px 16px;
-  border-radius: var(--radius-sm);
-  transition: background 0.15s ease;
+  border-radius: 9px;
+  border: 1px solid rgba(0, 223, 162, 0.45);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0, 107, 82, 0.22);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-add-shoe-catalog:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 107, 82, 0.32);
+  background: linear-gradient(135deg, #1e293b 0%, #008465 100%);
+}
+
+.btn-manage-quick {
+  background: #ffffff;
+  color: #1e293b;
+  border: 1.5px solid #cbd5e1;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 15px;
+  border-radius: 9px;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .btn-manage-quick:hover {
-  background: #000000;
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.section-sort-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.filter-sort-select {
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 9px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.filter-sort-select:focus {
+  border-color: #006b52;
+  box-shadow: 0 0 0 3px rgba(0, 107, 82, 0.15);
+}
+
+/* Responsive Mobile Layout for Section Header Controls */
+@media (max-width: 640px) {
+  .section-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .section-title-wrap {
+    width: 100%;
+  }
+
+  .section-actions-wrap {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .section-action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .btn-add-shoe-catalog {
+    width: 100%;
+    padding: 10px 8px;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .btn-manage-quick {
+    width: 100%;
+    padding: 10px 8px;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .section-sort-wrap {
+    width: 100%;
+  }
+
+  .filter-sort-select {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 13px;
+    border-radius: 9px;
+  }
 }
 
 /* Category Filter Pills */
