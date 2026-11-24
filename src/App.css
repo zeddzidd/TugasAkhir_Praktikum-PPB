@@ -806,10 +806,14 @@
   }
 
   .section-action-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    align-items: center;
     gap: 8px;
     width: 100%;
+  }
+
+  .section-action-buttons > button {
+    flex: 1;
   }
 
   .btn-add-shoe-catalog {

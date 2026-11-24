@@ -23,16 +23,33 @@ import {
 import './App.css'
 
 const STORAGE_KEY = 'zedconsign_shoes_catalog_v3'
+const TAB_STORAGE_KEY = 'zedconsign_active_tab'
 
 function App() {
-  const [tab, setTab] = useState('catalog')
+  const [tab, setTab] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(TAB_STORAGE_KEY) || localStorage.getItem(TAB_STORAGE_KEY)
+      if (saved && ['catalog', 'consign', 'manage', 'orders', 'profile'].includes(saved)) {
+        return saved
+      }
+    } catch {}
+    return 'catalog'
+  })
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSubNav, setSelectedSubNav] = useState('all')
   const [authModalMode, setAuthModalMode] = useState(null) // 'login' | 'register' | null
   const [pendingTabAfterAuth, setPendingTabAfterAuth] = useState(null)
-  const [currentUser, setCurrentUser] = useState(null)
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const raw = localStorage.getItem('zedconsign_current_session')
+      const sess = raw ? JSON.parse(raw) : null
+      return sess?.user || null
+    } catch {
+      return null
+    }
+  })
 
-  // Load session on launch
+  // Load session on launch and keep synchronized with remote
   useEffect(() => {
     async function checkAuth() {
       const sess = await getCurrentSession()
@@ -110,6 +127,10 @@ function App() {
       return // Tetap di tab sekarang, halaman sell sama sekali tidak dibuka
     }
     setTab(newTab)
+    try {
+      sessionStorage.setItem(TAB_STORAGE_KEY, newTab)
+      localStorage.setItem(TAB_STORAGE_KEY, newTab)
+    } catch {}
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
