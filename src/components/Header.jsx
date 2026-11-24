@@ -227,28 +227,6 @@ function Header({
           </div>
         </div>
 
-        {/* Sub-Navigation Strip (Redemption Center, Express Shipping ⚡, Sneakers, etc.) */}
-        <div className="header-subnav-strip">
-          <div className="subnav-scroll-container">
-            {SUB_NAV_ITEMS.map((item) => {
-              const isSelected = selectedSubNav === item.id
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`subnav-pill ${isSelected ? 'active' : ''} ${item.id === 'express' ? 'express-pill' : ''}`}
-                  onClick={() => {
-                    onSelectSubNav(item.id)
-                    if (activeTab !== 'catalog') onSelectTab('catalog')
-                  }}
-                >
-                  {item.label}
-                  {item.icon && <span className="bolt-icon">{item.icon}</span>}
-                </button>
-              )
-            })}
-          </div>
-        </div>
       </header>
 
       {/* Mobile Bottom Navigation for PWA (5 Halaman Utama: Home, Kelola, Sell, Pesanan, Profile) */}

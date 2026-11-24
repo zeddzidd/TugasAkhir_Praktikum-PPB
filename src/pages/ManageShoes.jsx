@@ -220,30 +220,6 @@ function ManageShoes({
             </svg>
             Tambah Sepatu Baru
           </button>
-
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={handleTriggerSync}
-            disabled={isSyncing}
-            title="Kirim dan sinkronkan semua sepatu lokal ke tabel database Supabase"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-          >
-            {isSyncing ? '⏳ Menyinkronkan...' : '⚡ Sinkronkan ke Supabase'}
-          </button>
-
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => {
-              if (window.confirm('Reset semua data ke katalog sampel bawaan praktikum?')) {
-                onResetDefault()
-              }
-            }}
-            title="Kembalikan ke data awal"
-          >
-            Reset Default
-          </button>
         </div>
       </div>
 
