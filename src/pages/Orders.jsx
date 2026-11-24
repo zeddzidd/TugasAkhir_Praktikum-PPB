@@ -1,45 +1,49 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { formatRupiah } from '../data/shoes.js'
-
-const ORDERS_STORAGE_KEY = 'zedconsign_user_orders_v1'
+import { isAdminUser } from '../lib/supabase.js'
+import { getAllOrders, updateOrder } from '../lib/orders.js'
 
 function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
-  const [orders, setOrders] = useState(() => {
-    try {
-      const saved = localStorage.getItem(ORDERS_STORAGE_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) {
-          // Bersihkan sample mock bawaan lama (ORD-ZC-2026-9812 dll) agar benar-benar kosong jika belum pesan
-          const realOrders = parsed.filter(
-            (o) =>
-              o.id !== 'ORD-ZC-2026-9812' &&
-              o.id !== 'ORD-ZC-2026-7451' &&
-              o.id !== 'ORD-ZC-2026-6120'
-          )
-          return realOrders
-        }
-      }
-    } catch {}
-    return []
-  })
+  const isAdmin = isAdminUser(currentUser)
 
+  const [orders, setOrders] = useState(() => getAllOrders())
+  const [adminViewMode, setAdminViewMode] = useState('all') // 'all' (semua pesanan toko) | 'my' (pesanan pribadi admin)
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedOrderDetail, setSelectedOrderDetail] = useState(null)
   const [copyToast, setCopyToast] = useState(false)
+  const [quickDispatchOrder, setQuickDispatchOrder] = useState(null)
+  const [quickResi, setQuickResi] = useState('')
+  const [quickCourier, setQuickCourier] = useState('JNE Express x ZedConsign')
+  const [ordersToast, setOrdersToast] = useState('')
 
-  // Sync to localStorage
+  // Sync orders dynamically on window events
   useEffect(() => {
-    try {
-      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders))
-    } catch (e) {
-      console.error(e)
+    const handleReload = () => {
+      setOrders(getAllOrders())
     }
-  }, [orders])
+    window.addEventListener('zedconsign_orders_updated', handleReload)
+    window.addEventListener('storage', handleReload)
+    return () => {
+      window.removeEventListener('zedconsign_orders_updated', handleReload)
+      window.removeEventListener('storage', handleReload)
+    }
+  }, [])
+
+  // Filter pesanan hanya milik user yang sedang login
+  const myOrders = useMemo(() => {
+    if (!currentUser) return []
+    return orders.filter((order) => {
+      if (order.userId && order.userId === currentUser.id) return true
+      if (order.userEmail && order.userEmail.toLowerCase() === currentUser.email?.toLowerCase()) return true
+      if (order.buyerPhone && currentUser.phone && order.buyerPhone === currentUser.phone) return true
+      if (order.buyerName && currentUser.fullName && order.buyerName.toLowerCase() === currentUser.fullName.toLowerCase()) return true
+      return false
+    })
+  }, [orders, currentUser])
 
   // =========================================================================
-  // KONDISI 1: JIKA BELUM LOGIN -> TAMPILKAN EMPTY STATE KUNCI LOGIN (TIDAK ADA PESANAN)
+  // KONDISI 1: JIKA BELUM LOGIN -> TAMPILKAN EMPTY STATE KUNCI LOGIN
   // =========================================================================
   if (!currentUser) {
     return (
@@ -107,50 +111,15 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
     )
   }
 
-  // Filter pesanan hanya milik user yang sedang login
-  const userOrders = orders.filter((order) => {
-    if (order.userId && order.userId === currentUser.id) return true
-    if (order.userEmail && order.userEmail.toLowerCase() === currentUser.email?.toLowerCase()) return true
-    if (order.buyerPhone && currentUser.phone && order.buyerPhone === currentUser.phone) return true
-    if (order.buyerName && currentUser.fullName && order.buyerName.toLowerCase() === currentUser.fullName.toLowerCase()) return true
-    return false
-  })
-
-  // Filter berdasarkan search query dan tab status
-  const filteredOrders = userOrders.filter((order) => {
-    const matchStatus =
-      selectedStatus === 'all' ||
-      order.status.toLowerCase().includes(selectedStatus.toLowerCase())
-    const matchQuery =
-      order.shoeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.trackingNumber.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchStatus && matchQuery
-  })
-
-  const handleCopyResi = (resi) => {
-    navigator.clipboard.writeText(resi)
-    setCopyToast(true)
-    setTimeout(() => setCopyToast(false), 2000)
-  }
-
-  const getStatusBadgeStyle = (status) => {
-    switch (status) {
-      case 'Selesai':
-        return { bg: '#ecfdf5', color: '#059669', border: '#a7f3d0' }
-      case 'Dikirim':
-        return { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' }
-      case 'Diproses di Vault':
-        return { bg: '#fef3c7', color: '#d97706', border: '#fde68a' }
-      default:
-        return { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' }
-    }
-  }
+  // Tentukan basis list pesanan:
+  // Jika Admin & mode 'all': tampilkan seluruh pesanan toko
+  // Jika User biasa atau admin mode 'my': tampilkan pesanan pribadi
+  const activeBaseOrders = isAdmin && adminViewMode === 'all' ? orders : myOrders
 
   // =========================================================================
-  // KONDISI 2: USER SUDAH LOGIN TAPI BELUM PERNAH MEMESAN -> KOSONG
+  // KONDISI 2: USER BIASA SUDAH LOGIN TAPI BELUM PERNAH MEMESAN -> KOSONG
   // =========================================================================
-  if (userOrders.length === 0) {
+  if (!isAdmin && myOrders.length === 0) {
     return (
       <div style={{ maxWidth: '640px', margin: '40px auto 80px', padding: '0 16px', textAlign: 'center' }}>
         <div
@@ -206,6 +175,86 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
     )
   }
 
+  // Filter berdasarkan search query dan tab status
+  const filteredOrders = activeBaseOrders.filter((order) => {
+    const matchStatus =
+      selectedStatus === 'all' ||
+      (selectedStatus === 'Vault' &&
+        (order.status?.toLowerCase().includes('vault') ||
+          order.status?.toLowerCase().includes('menunggu') ||
+          order.status?.toLowerCase().includes('proses'))) ||
+      (selectedStatus === 'Dikirim' &&
+        (order.status === 'Sedang Dikirim' ||
+          order.status === 'Dikirim' ||
+          order.status?.toLowerCase().includes('kirim'))) ||
+      (selectedStatus === 'Selesai' && order.status === 'Selesai')
+
+    const q = searchQuery.toLowerCase().trim()
+    const matchQuery =
+      !q ||
+      order.shoeName?.toLowerCase().includes(q) ||
+      order.id?.toLowerCase().includes(q) ||
+      order.trackingNumber?.toLowerCase().includes(q) ||
+      order.buyerName?.toLowerCase().includes(q) ||
+      order.userEmail?.toLowerCase().includes(q)
+
+    return matchStatus && matchQuery
+  })
+
+  const handleCopyResi = (resi) => {
+    if (!resi) return
+    navigator.clipboard.writeText(resi)
+    setCopyToast(true)
+    setTimeout(() => setCopyToast(false), 2000)
+  }
+
+  const getStatusBadgeStyle = (status) => {
+    switch (status) {
+      case 'Selesai':
+        return { bg: '#ecfdf5', color: '#059669', border: '#a7f3d0' }
+      case 'Sedang Dikirim':
+      case 'Dikirim':
+        return { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' }
+      case 'Menunggu ACC & Kirim Vault':
+      case 'Diproses di Vault':
+        return { bg: '#fef3c7', color: '#d97706', border: '#fde68a' }
+      default:
+        return { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' }
+    }
+  }
+
+  // Quick dispatch from Orders page
+  const handleOpenQuickDispatch = (order) => {
+    setQuickDispatchOrder(order)
+    setQuickCourier(order.courier || 'JNE Express x ZedConsign')
+    setQuickResi(order.trackingNumber || `ZC-EXP-${Math.floor(100000 + Math.random() * 900000)}ID`)
+  }
+
+  const handleConfirmQuickDispatch = (e) => {
+    e.preventDefault()
+    if (!quickDispatchOrder) return
+    const resi = quickResi.trim() || `ZC-EXP-${Math.floor(100000 + Math.random() * 900000)}ID`
+    const nowTime =
+      new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) +
+      ', ' +
+      new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) +
+      ' WIB'
+
+    updateOrder(quickDispatchOrder.id, {
+      status: 'Sedang Dikirim',
+      deliveryStatus: 'Sedang Dikirim',
+      courier: quickCourier,
+      trackingNumber: resi,
+      shippedAt: nowTime,
+      shippedBy: currentUser?.fullName || 'Admin Shiddiq Yazid',
+    })
+
+    setOrders(getAllOrders())
+    setOrdersToast(`✓ Perintah Kirim Berhasil! Resi: ${resi}`)
+    setTimeout(() => setOrdersToast(''), 4000)
+    setQuickDispatchOrder(null)
+  }
+
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 16px 80px' }}>
       {/* Toast Notification */}
@@ -230,6 +279,27 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
         </div>
       )}
 
+      {ordersToast && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'linear-gradient(135deg, #065f46 0%, #047857 100%)',
+            color: '#ffffff',
+            padding: '12px 24px',
+            borderRadius: '9999px',
+            fontWeight: '700',
+            fontSize: '14px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+            zIndex: 9999,
+          }}
+        >
+          {ordersToast}
+        </div>
+      )}
+
       {/* Hero Header */}
       <div
         style={{
@@ -241,69 +311,118 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
           boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
         }}
       >
-        <span
-          style={{
-            display: 'inline-block',
-            fontSize: '11px',
-            fontWeight: '800',
-            letterSpacing: '1px',
-            textTransform: 'uppercase',
-            color: 'var(--accent)',
-            background: 'rgba(0, 223, 162, 0.1)',
-            padding: '4px 12px',
-            borderRadius: '9999px',
-            marginBottom: '10px',
-            border: '1px solid rgba(0, 223, 162, 0.2)',
-          }}
-        >
-          TRANSACTION &amp; ORDER TRACKING
-        </span>
-        <h1 style={{ fontSize: '26px', fontWeight: '800', color: '#ffffff', margin: '0 0 8px' }}>
-          Daftar Pesanan &amp; Riwayat Transaksi
-        </h1>
-        <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0, lineHeight: '1.6' }}>
-          Pantau proses kurasi fisik 100% authentic di ZedConsign Vault, verifikasi resi pengiriman, serta cetak invoice transaksi resmi Anda.
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <span
+              style={{
+                display: 'inline-block',
+                fontSize: '11px',
+                fontWeight: '800',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                color: 'var(--accent)',
+                background: 'rgba(0, 223, 162, 0.1)',
+                padding: '4px 12px',
+                borderRadius: '9999px',
+                marginBottom: '10px',
+                border: '1px solid rgba(0, 223, 162, 0.2)',
+              }}
+            >
+              TRANSACTION &amp; ORDER TRACKING
+            </span>
+            <h1 style={{ fontSize: '26px', fontWeight: '800', color: '#ffffff', margin: '0 0 8px' }}>
+              Daftar Pesanan &amp; Riwayat Transaksi
+            </h1>
+            <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0, lineHeight: '1.6' }}>
+              Pantau proses kurasi fisik 100% authentic di ZedConsign Vault, verifikasi resi pengiriman, serta cetak invoice transaksi resmi Anda.
+            </p>
+          </div>
+
+          {/* Admin Toggle: Semua Pesanan vs Pesanan Saya */}
+          {isAdmin && (
+            <div
+              style={{
+                background: 'rgba(255,255,255,0.08)',
+                padding: '4px',
+                borderRadius: '10px',
+                display: 'flex',
+                gap: '4px',
+                border: '1px solid rgba(255,255,255,0.15)',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setAdminViewMode('all')}
+                style={{
+                  background: adminViewMode === 'all' ? 'var(--accent)' : 'transparent',
+                  color: adminViewMode === 'all' ? '#000000' : '#ffffff',
+                  border: 'none',
+                  padding: '8px 14px',
+                  borderRadius: '7px',
+                  fontWeight: '800',
+                  fontSize: '12.5px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                📋 Semua Pesanan Toko ({orders.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminViewMode('my')}
+                style={{
+                  background: adminViewMode === 'my' ? 'var(--accent)' : 'transparent',
+                  color: adminViewMode === 'my' ? '#000000' : '#ffffff',
+                  border: 'none',
+                  padding: '8px 14px',
+                  borderRadius: '7px',
+                  fontWeight: '800',
+                  fontSize: '12.5px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                👤 Pesanan Saya ({myOrders.length})
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Guest Note */}
-      {!currentUser && (
+      {/* Admin Information Banner if Admin View */}
+      {isAdmin && adminViewMode === 'all' && (
         <div
           style={{
-            background: 'rgba(30, 41, 59, 0.5)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'linear-gradient(135deg, rgba(0, 223, 162, 0.1) 0%, rgba(3, 105, 161, 0.1) 100%)',
+            border: '1px solid rgba(0, 223, 162, 0.3)',
             borderRadius: '12px',
-            padding: '14px 18px',
+            padding: '12px 18px',
             marginBottom: '20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '12px',
             flexWrap: 'wrap',
+            gap: '10px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '20px' }}>🔒</span>
-            <span style={{ fontSize: '13px', color: '#cbd5e1' }}>
-              Anda sedang melihat <strong>Pratinjau Sampel Transaksi Pesanan</strong>. Masuk ke akun Anda untuk melihat pesanan pribadi.
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#e2e8f0' }}>
+            <span>🛡️</span>
+            <span>
+              <strong>Mode Administrator Vault:</strong> Menampilkan seluruh pesanan masuk dari pembeli di toko. Anda dapat memantau status atau langsung menerbitkan perintah kirim sepatu.
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => onOpenAuth && onOpenAuth('login')}
+          <span
             style={{
-              background: 'var(--accent)',
-              color: '#000',
-              border: 'none',
-              padding: '6px 16px',
-              borderRadius: '8px',
-              fontWeight: '700',
-              fontSize: '13px',
-              cursor: 'pointer',
+              fontSize: '11px',
+              fontWeight: '800',
+              background: '#00dfa2',
+              color: '#0f172a',
+              padding: '3px 10px',
+              borderRadius: '9999px',
             }}
           >
-            Masuk Akun
-          </button>
+            {orders.length} TOTAL PESANAN TOKO
+          </span>
         </div>
       )}
 
@@ -322,9 +441,9 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {[
             { id: 'all', label: 'Semua Pesanan' },
-            { id: 'Vault', label: 'Vault Autentikasi' },
-            { id: 'Dikirim', label: 'Sedang Dikirim' },
-            { id: 'Selesai', label: 'Selesai' },
+            { id: 'Vault', label: '⏳ Vault Autentikasi' },
+            { id: 'Dikirim', label: '🚚 Sedang Dikirim' },
+            { id: 'Selesai', label: '✅ Selesai' },
           ].map((tab) => {
             const isActive = selectedStatus === tab.id
             return (
@@ -355,7 +474,7 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
           <input
             type="text"
             className="search-input"
-            placeholder="Cari nama sepatu, ID, atau resi..."
+            placeholder="Cari nama sepatu, ID, resi, pembeli..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{ margin: 0, width: '100%' }}
@@ -368,19 +487,22 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
         <div style={{ display: 'grid', gap: '16px' }}>
           {filteredOrders.map((order) => {
             const statusStyle = getStatusBadgeStyle(order.status)
+            const isPendingShipment =
+              order.status === 'Menunggu ACC & Kirim Vault' ||
+              order.status === 'Diproses di Vault' ||
+              order.status?.toLowerCase().includes('menunggu')
+
             return (
               <div
                 key={order.id}
                 style={{
                   background: 'var(--bg-card)',
-                  border: '1px solid var(--border-color)',
+                  border: isPendingShipment ? '1.5px solid #f59e0b' : '1px solid var(--border-color)',
                   borderRadius: '14px',
                   padding: '20px',
                   transition: 'all 0.2s ease',
                   boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
-                  cursor: 'pointer',
                 }}
-                onClick={() => setSelectedOrderDetail(order)}
               >
                 {/* Top Row: Order ID, Date, and Status Badge */}
                 <div
@@ -400,6 +522,11 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
                       {order.id}
                     </span>
                     <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>&bull; {order.date}</span>
+                    {isAdmin && order.userEmail && (
+                      <span style={{ fontSize: '11px', background: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: '4px', color: '#94a3b8' }}>
+                        Pembeli: {order.buyerName || order.userEmail}
+                      </span>
+                    )}
                   </div>
 
                   <span
@@ -448,6 +575,11 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
                     <div style={{ fontSize: '12px', color: 'var(--text-dim)' }}>
                       Metode: {order.shippingType}
                     </div>
+                    {order.trackingNumber && (
+                      <div style={{ fontSize: '12px', color: 'var(--accent)', marginTop: '4px', fontWeight: '700' }}>
+                        Resi ({order.courier}): {order.trackingNumber}
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ textAlign: 'right', minWidth: '150px' }}>
@@ -455,26 +587,43 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
                     <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--accent)', marginBottom: '8px' }}>
                       {formatRupiah(order.price + order.shippingCost)}
                     </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedOrderDetail(order)
-                      }}
-                      style={{
-                        background: 'transparent',
-                        border: '1px solid var(--accent)',
-                        color: 'var(--accent)',
-                        padding: '6px 14px',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: '700',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      👁️ Lihat Detail &amp; Resi
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                      {isAdmin && isPendingShipment && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenQuickDispatch(order)}
+                          style={{
+                            background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                            color: '#ffffff',
+                            border: 'none',
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            fontWeight: '800',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          🚀 Kirim Sepatu
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedOrderDetail(order)}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid var(--accent)',
+                          color: 'var(--accent)',
+                          padding: '6px 14px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        👁️ Lihat Detail &amp; Resi
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -496,7 +645,7 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
             Belum Ada Pesanan yang Cocok
           </h3>
           <p style={{ fontSize: '13px', color: 'var(--text-dim)', marginBottom: '20px' }}>
-            Tidak ada riwayat transaksi pada filter ini. Jelajahi katalog sneaker original terverifikasi kami sekarang.
+            Tidak ada riwayat transaksi pada filter ini.
           </p>
           <button
             type="button"
@@ -593,34 +742,58 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
               </div>
 
               {/* Progress Steps Indicator */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: '4px',
-                  textAlign: 'center',
-                  fontSize: '10px',
-                  fontWeight: '700',
-                  color: 'var(--text-dim)',
-                }}
-              >
-                <div style={{ color: 'var(--accent)' }}>
-                  <div style={{ height: '4px', background: 'var(--accent)', borderRadius: '2px', marginBottom: '4px' }} />
-                  1. Dipesan
-                </div>
-                <div style={{ color: 'var(--accent)' }}>
-                  <div style={{ height: '4px', background: 'var(--accent)', borderRadius: '2px', marginBottom: '4px' }} />
-                  2. Masuk Vault
-                </div>
-                <div style={{ color: selectedOrderDetail.status === 'Dikirim' || selectedOrderDetail.status === 'Selesai' ? 'var(--accent)' : 'rgba(255,255,255,0.2)' }}>
-                  <div style={{ height: '4px', background: selectedOrderDetail.status === 'Dikirim' || selectedOrderDetail.status === 'Selesai' ? 'var(--accent)' : 'rgba(255,255,255,0.2)', borderRadius: '2px', marginBottom: '4px' }} />
-                  3. Lolos Kurasi
-                </div>
-                <div style={{ color: selectedOrderDetail.status === 'Selesai' ? 'var(--accent)' : 'rgba(255,255,255,0.2)' }}>
-                  <div style={{ height: '4px', background: selectedOrderDetail.status === 'Selesai' ? 'var(--accent)' : 'rgba(255,255,255,0.2)', borderRadius: '2px', marginBottom: '4px' }} />
-                  4. Diterima
-                </div>
-              </div>
+              {(() => {
+                const isShipped =
+                  selectedOrderDetail.status === 'Sedang Dikirim' ||
+                  selectedOrderDetail.status === 'Dikirim' ||
+                  selectedOrderDetail.status === 'Selesai'
+                const isCompleted = selectedOrderDetail.status === 'Selesai'
+
+                return (
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, 1fr)',
+                      gap: '4px',
+                      textAlign: 'center',
+                      fontSize: '10px',
+                      fontWeight: '700',
+                      color: 'var(--text-dim)',
+                    }}
+                  >
+                    <div style={{ color: 'var(--accent)' }}>
+                      <div style={{ height: '4px', background: 'var(--accent)', borderRadius: '2px', marginBottom: '4px' }} />
+                      1. Dipesan
+                    </div>
+                    <div style={{ color: 'var(--accent)' }}>
+                      <div style={{ height: '4px', background: 'var(--accent)', borderRadius: '2px', marginBottom: '4px' }} />
+                      2. Masuk Vault
+                    </div>
+                    <div style={{ color: isShipped ? 'var(--accent)' : 'rgba(255,255,255,0.2)' }}>
+                      <div
+                        style={{
+                          height: '4px',
+                          background: isShipped ? 'var(--accent)' : 'rgba(255,255,255,0.2)',
+                          borderRadius: '2px',
+                          marginBottom: '4px',
+                        }}
+                      />
+                      3. ACC &amp; Dikirim
+                    </div>
+                    <div style={{ color: isCompleted ? 'var(--accent)' : 'rgba(255,255,255,0.2)' }}>
+                      <div
+                        style={{
+                          height: '4px',
+                          background: isCompleted ? 'var(--accent)' : 'rgba(255,255,255,0.2)',
+                          borderRadius: '2px',
+                          marginBottom: '4px',
+                        }}
+                      />
+                      4. Diterima
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
 
             {/* Item Info Box */}
@@ -681,29 +854,31 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
             >
               <div>
                 <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '700' }}>
-                  Nomor Resi Pengiriman ({selectedOrderDetail.courier})
+                  Nomor Resi Pengiriman ({selectedOrderDetail.courier || 'Ekspedisi Rekanan'})
                 </div>
                 <div style={{ fontSize: '16px', fontWeight: '900', color: '#ffffff', letterSpacing: '1px', marginTop: '2px' }}>
-                  {selectedOrderDetail.trackingNumber}
+                  {selectedOrderDetail.trackingNumber || 'Menunggu terbit resi Vault'}
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => handleCopyResi(selectedOrderDetail.trackingNumber)}
-                style={{
-                  background: 'var(--accent)',
-                  color: '#000000',
-                  border: 'none',
-                  padding: '7px 16px',
-                  borderRadius: '8px',
-                  fontWeight: '800',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                }}
-              >
-                Salin Resi
-              </button>
+              {selectedOrderDetail.trackingNumber && (
+                <button
+                  type="button"
+                  onClick={() => handleCopyResi(selectedOrderDetail.trackingNumber)}
+                  style={{
+                    background: 'var(--accent)',
+                    color: '#000000',
+                    border: 'none',
+                    padding: '7px 16px',
+                    borderRadius: '8px',
+                    fontWeight: '800',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Salin Resi
+                </button>
+              )}
             </div>
 
             {/* Authenticity Vault Certificate Badge */}
@@ -740,7 +915,7 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
                   ZedConsign 100% Authentic Guaranteed
                 </strong>
                 <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-                  Tag RFID/NFC Vault: <strong>{selectedOrderDetail.vaultVerificationTag}</strong> &bull; Diverifikasi oleh {selectedOrderDetail.verifiedBy}.
+                  Tag RFID/NFC Vault: <strong>{selectedOrderDetail.vaultVerificationTag}</strong> &bull; Diverifikasi oleh {selectedOrderDetail.verifiedBy || 'Tim Kurator Vault'}.
                 </span>
               </div>
             </div>
@@ -815,6 +990,72 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
                 Tutup Rincian
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* QUICK DISPATCH MODAL IN ORDERS PAGE */}
+      {quickDispatchOrder && (
+        <div className="modal-overlay" onClick={() => setQuickDispatchOrder(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px', width: '92%' }}>
+            <div className="modal-header">
+              <h2 className="modal-title" style={{ fontSize: '18px' }}>
+                🚀 Kirim Sepatu &amp; Terbitkan Resi
+              </h2>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={() => setQuickDispatchOrder(null)}
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmQuickDispatch} className="modal-body" style={{ padding: '20px' }}>
+              <div style={{ marginBottom: '14px', fontSize: '13px' }}>
+                <div>Pesanan: <strong>{quickDispatchOrder.id}</strong></div>
+                <div>Sepatu: <strong>{quickDispatchOrder.shoeName}</strong> ({quickDispatchOrder.size})</div>
+                <div>Penerima: <strong>{quickDispatchOrder.buyerName}</strong></div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Kurir Ekspedisi</label>
+                <select
+                  className="form-select"
+                  value={quickCourier}
+                  onChange={(e) => setQuickCourier(e.target.value)}
+                >
+                  <option value="JNE Express x ZedConsign">JNE Express x ZedConsign</option>
+                  <option value="SiCepat Cargo & Reguler">SiCepat Cargo &amp; Reguler</option>
+                  <option value="J&T Express Super">J&amp;T Express Super</option>
+                  <option value="ZedConsign Vault Courier Express">ZedConsign Vault Courier Express</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Nomor Resi (AWB)</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={quickResi}
+                  onChange={(e) => setQuickResi(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="modal-actions" style={{ marginTop: '16px' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setQuickDispatchOrder(null)}
+                >
+                  Batal
+                </button>
+                <button type="submit" className="btn-primary">
+                  Kirim Sekarang
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { formatRupiah, CATEGORIES } from '../data/shoes.js'
 import ImageUploader from '../components/ImageUploader.jsx'
 import { isAdminUser } from '../lib/supabase.js'
+import { getAllOrders, updateOrder } from '../lib/orders.js'
 
 const PRESET_IMAGES = [
   { label: 'Air Max Goadome Foam', value: '/shoes/goadome-foam.svg' },
@@ -45,8 +46,21 @@ function ManageShoes({
 }) {
   const isAdmin = isAdminUser(currentUser)
 
+  // Orders State (Fulfillment & Dispatch)
+  const [orders, setOrders] = useState(() => getAllOrders())
+  const [orderStatusFilter, setOrderStatusFilter] = useState('all') // 'all' | 'pending' | 'shipped' | 'completed'
+  const [orderSearchQuery, setOrderSearchQuery] = useState('')
+  const [shippingDispatchOrder, setShippingDispatchOrder] = useState(null)
+  const [shippingLabelOrder, setShippingLabelOrder] = useState(null)
+  const [selectedOrderDetail, setSelectedOrderDetail] = useState(null)
+
+  // Shipping Form State
+  const [selectedCourier, setSelectedCourier] = useState('JNE Express x ZedConsign')
+  const [customResi, setCustomResi] = useState('')
+  const [courierNotes, setCourierNotes] = useState('Paket telah lolos verifikasi fisik 100% Authentic di ZedConsign Vault & siap dikirim.')
+
   // Admin View State
-  const [adminTab, setAdminTab] = useState('vault') // 'vault' | 'inventory'
+  const [adminTab, setAdminTab] = useState('orders') // 'orders' | 'vault' | 'inventory'
   const [vaultFilter, setVaultFilter] = useState('all') // 'all' | 'pending' | 'verified' | 'rejected'
   const [search, setSearch] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -57,7 +71,80 @@ function ManageShoes({
   const [selectedDetailShoe, setSelectedDetailShoe] = useState(null)
   const [adminToast, setAdminToast] = useState('')
 
-  // Submissions and Status Categorization
+  // Sync orders dynamically on window events
+  useEffect(() => {
+    const handleReloadOrders = () => {
+      setOrders(getAllOrders())
+    }
+    window.addEventListener('zedconsign_orders_updated', handleReloadOrders)
+    window.addEventListener('storage', handleReloadOrders)
+    return () => {
+      window.removeEventListener('zedconsign_orders_updated', handleReloadOrders)
+      window.removeEventListener('storage', handleReloadOrders)
+    }
+  }, [])
+
+  // Order Metrics
+  const pendingOrders = useMemo(
+    () =>
+      orders.filter(
+        (o) =>
+          o.status === 'Menunggu ACC & Kirim Vault' ||
+          o.status === 'Diproses di Vault' ||
+          o.status?.toLowerCase().includes('menunggu')
+      ),
+    [orders]
+  )
+  const shippedOrders = useMemo(
+    () =>
+      orders.filter(
+        (o) =>
+          o.status === 'Sedang Dikirim' ||
+          o.status === 'Dikirim' ||
+          o.status?.toLowerCase().includes('kirim')
+      ),
+    [orders]
+  )
+  const completedOrders = useMemo(
+    () => orders.filter((o) => o.status === 'Selesai'),
+    [orders]
+  )
+  const totalOrdersRevenue = useMemo(
+    () =>
+      orders.reduce(
+        (acc, o) => acc + (Number(o.price) || 0) + (Number(o.shippingCost) || 0),
+        0
+      ),
+    [orders]
+  )
+
+  // Filtered Orders List
+  const displayOrders = useMemo(() => {
+    let list = orders
+    if (orderStatusFilter === 'pending') {
+      list = pendingOrders
+    } else if (orderStatusFilter === 'shipped') {
+      list = shippedOrders
+    } else if (orderStatusFilter === 'completed') {
+      list = completedOrders
+    }
+
+    if (orderSearchQuery.trim()) {
+      const q = orderSearchQuery.trim().toLowerCase()
+      list = list.filter(
+        (o) =>
+          o.id?.toLowerCase().includes(q) ||
+          o.shoeName?.toLowerCase().includes(q) ||
+          o.buyerName?.toLowerCase().includes(q) ||
+          o.buyerPhone?.toLowerCase().includes(q) ||
+          o.trackingNumber?.toLowerCase().includes(q) ||
+          o.userEmail?.toLowerCase().includes(q)
+      )
+    }
+    return list
+  }, [orders, orderStatusFilter, pendingOrders, shippedOrders, completedOrders, orderSearchQuery])
+
+  // Submissions and Status Categorization for Consign Vault
   const pendingShoes = useMemo(
     () => shoes.filter((s) => s.authStatus === 'pending'),
     [shoes]
@@ -71,7 +158,13 @@ function ManageShoes({
     [shoes]
   )
   const consignSubmissions = useMemo(
-    () => shoes.filter((s) => (s.id && s.id.startsWith('consign-')) || s.authStatus === 'pending' || s.authStatus === 'rejected'),
+    () =>
+      shoes.filter(
+        (s) =>
+          (s.id && s.id.startsWith('consign-')) ||
+          s.authStatus === 'pending' ||
+          s.authStatus === 'rejected'
+      ),
     [shoes]
   )
 
@@ -115,7 +208,95 @@ function ManageShoes({
     )
   }, [shoes, search])
 
-  // Handle ACC Vault
+  // Handle Dispatch / Kirim Sepatu
+  const handleOpenDispatchModal = (order) => {
+    setShippingDispatchOrder(order)
+    setSelectedCourier(order.courier || 'JNE Express x ZedConsign')
+    setCustomResi(
+      order.trackingNumber ||
+        `ZC-${order.shippingType?.includes('Express') ? 'EXP' : 'REG'}-${Math.floor(
+          100000 + Math.random() * 900000
+        )}ID`
+    )
+    setCourierNotes(
+      'Paket telah lolos verifikasi fisik 100% Authentic di ZedConsign Vault & siap dikirim kurir.'
+    )
+  }
+
+  const handleConfirmDispatch = (e) => {
+    e.preventDefault()
+    if (!shippingDispatchOrder) return
+    const resiNumber =
+      customResi.trim() ||
+      `ZC-EXP-${Math.floor(100000 + Math.random() * 900000)}ID`
+    const nowTime =
+      new Date().toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }) +
+      ', ' +
+      new Date().toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }) +
+      ' WIB'
+
+    updateOrder(shippingDispatchOrder.id, {
+      status: 'Sedang Dikirim',
+      deliveryStatus: 'Sedang Dikirim',
+      courier: selectedCourier,
+      trackingNumber: resiNumber,
+      shippedAt: nowTime,
+      shippedBy: currentUser?.fullName || 'Admin Shiddiq Yazid',
+      courierNotes: courierNotes,
+    })
+
+    // Potong stok sepatu terkait di katalog
+    const targetShoe = shoes.find(
+      (s) =>
+        s.id === shippingDispatchOrder.shoeId ||
+        s.name.toLowerCase() === shippingDispatchOrder.shoeName?.toLowerCase()
+    )
+    if (targetShoe && onUpdateShoe) {
+      const curStock = Number(targetShoe.stock) || 1
+      onUpdateShoe({
+        ...targetShoe,
+        stock: Math.max(0, curStock - 1),
+      })
+    }
+
+    setOrders(getAllOrders())
+    setAdminToast(
+      `✓ Perintah Kirim Berhasil! Sepatu "${shippingDispatchOrder.shoeName}" resmi dikirim. Resi: ${resiNumber}`
+    )
+    setTimeout(() => setAdminToast(''), 5000)
+    setShippingDispatchOrder(null)
+  }
+
+  // Handle Mark Completed
+  const handleMarkOrderCompleted = (order) => {
+    if (
+      window.confirm(
+        `Tandai pesanan ${order.id} sebagai Selesai / Diterima Pembeli?`
+      )
+    ) {
+      updateOrder(order.id, {
+        status: 'Selesai',
+        deliveryStatus: 'Telah Diterima',
+        completedAt: new Date().toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        }),
+      })
+      setOrders(getAllOrders())
+      setAdminToast(`✓ Pesanan ${order.id} telah ditandai Selesai!`)
+      setTimeout(() => setAdminToast(''), 4500)
+    }
+  }
+
+  // Handle ACC Vault for Titip Jual
   const handleAccVault = (shoe) => {
     const updated = {
       ...shoe,
@@ -125,11 +306,13 @@ function ManageShoes({
       stock: Number(shoe.stock) > 0 ? Number(shoe.stock) : 1,
     }
     onUpdateShoe(updated)
-    setAdminToast(`✓ Sepatu "${shoe.name}" berhasil di-ACC & Terverifikasi Vault! Langsung aktif di katalog publik.`)
+    setAdminToast(
+      `✓ Sepatu "${shoe.name}" berhasil di-ACC & Terverifikasi Vault! Langsung aktif di katalog publik.`
+    )
     setTimeout(() => setAdminToast(''), 4500)
   }
 
-  // Handle Reject Vault
+  // Handle Reject Vault for Titip Jual
   const handleRejectVault = (shoe) => {
     if (window.confirm(`Tolak verifikasi autentikasi sepatu "${shoe.name}"?`)) {
       const updated = {
@@ -149,7 +332,9 @@ function ManageShoes({
     setEditingShoe(null)
     setFormData({
       ...INITIAL_FORM,
-      consignor: currentUser?.fullName ? `${currentUser.fullName} (Admin)` : 'ZedConsign Vault Admin',
+      consignor: currentUser?.fullName
+        ? `${currentUser.fullName} (Admin)`
+        : 'ZedConsign Vault Admin',
     })
     setErrorMsg('')
     setIsModalOpen(true)
@@ -229,7 +414,9 @@ function ManageShoes({
         verifiedBy: currentUser?.fullName || 'Admin Shiddiq Yazid',
       }
       onAddShoe(newShoe)
-      setAdminToast(`✓ Sepatu baru "${newShoe.name}" berhasil ditambahkan ke inventaris Vault!`)
+      setAdminToast(
+        `✓ Sepatu baru "${newShoe.name}" berhasil ditambahkan ke inventaris Vault!`
+      )
       setTimeout(() => setAdminToast(''), 4500)
     }
 
@@ -239,7 +426,9 @@ function ManageShoes({
   const confirmDelete = () => {
     if (deleteCandidate) {
       onDeleteShoe(deleteCandidate.id)
-      setAdminToast(`Sepatu "${deleteCandidate.name}" berhasil dihapus dari inventaris.`)
+      setAdminToast(
+        `Sepatu "${deleteCandidate.name}" berhasil dihapus dari inventaris.`
+      )
       setTimeout(() => setAdminToast(''), 4500)
       setDeleteCandidate(null)
     }
@@ -250,7 +439,10 @@ function ManageShoes({
   // ===========================================================================
   if (!isAdmin) {
     return (
-      <div className="manage-page-container" style={{ maxWidth: '860px', margin: '0 auto', padding: '32px 16px' }}>
+      <div
+        className="manage-page-container"
+        style={{ maxWidth: '860px', margin: '0 auto', padding: '32px 16px' }}
+      >
         <div
           style={{
             background: '#ffffff',
@@ -296,19 +488,60 @@ function ManageShoes({
             Akses Dibatasi &bull; Khusus Administrator
           </span>
 
-          <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', marginBottom: '12px' }}>
+          <h2
+            style={{
+              fontSize: '24px',
+              fontWeight: '800',
+              color: '#0f172a',
+              marginBottom: '12px',
+            }}
+          >
             Portal Admin Vault &amp; Kelola Barang
           </h2>
 
-          <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.7', maxWidth: '620px', margin: '0 auto 24px' }}>
-            Halaman ini dikhususkan bagi <strong>Administrator &amp; Tim Kurator ZedConsign Vault</strong> untuk memeriksa status keaslian fisik (Legit Check ACC) serta mengelola katalog inventaris sepatu toko.
+          <p
+            style={{
+              fontSize: '14px',
+              color: '#475569',
+              lineHeight: '1.7',
+              maxWidth: '620px',
+              margin: '0 auto 24px',
+            }}
+          >
+            Halaman ini dikhususkan bagi{' '}
+            <strong>Administrator &amp; Tim Kurator ZedConsign Vault</strong>{' '}
+            untuk memeriksa pesanan masuk pembeli, menerbitkan instruksi kirim
+            sepatu, serta memeriksa status keaslian fisik sepatu titip jual.
             <br />
             {currentUser ? (
-              <span style={{ display: 'inline-block', marginTop: '8px', color: '#0369a1', background: '#f0f9ff', padding: '6px 14px', borderRadius: '8px', fontSize: '13px' }}>
-                Status Akun: <strong>Consignor / Pengguna Publik ({currentUser.fullName || currentUser.email})</strong>
+              <span
+                style={{
+                  display: 'inline-block',
+                  marginTop: '8px',
+                  color: '#0369a1',
+                  background: '#f0f9ff',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                }}
+              >
+                Status Akun:{' '}
+                <strong>
+                  Consignor / Pengguna Publik ({currentUser.fullName || currentUser.email})
+                </strong>
               </span>
             ) : (
-              <span style={{ display: 'inline-block', marginTop: '8px', color: '#b45309', background: '#fffbeb', padding: '6px 14px', borderRadius: '8px', fontSize: '13px' }}>
+              <span
+                style={{
+                  display: 'inline-block',
+                  marginTop: '8px',
+                  color: '#b45309',
+                  background: '#fffbeb',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                }}
+              >
                 Status Akun: <strong>Pengunjung / Tamu Belum Masuk</strong>
               </span>
             )}
@@ -325,25 +558,85 @@ function ManageShoes({
               marginBottom: '28px',
             }}
           >
-            <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
+            <h4
+              style={{
+                fontSize: '13px',
+                fontWeight: '800',
+                color: '#0f172a',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: '12px',
+              }}
+            >
               Panduan Hak Akses Pengguna Publik:
             </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px', fontSize: '13px' }}>
-              <div style={{ background: '#ffffff', padding: '12px 14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <strong style={{ color: '#047857', display: 'block', marginBottom: '2px' }}>✅ Ajukan Titip Jual (Sell)</strong>
-                <span style={{ color: '#64748b', fontSize: '12px' }}>Pengguna dapat mendaftarkan sepatu pribadi untuk diverifikasi dan di-ACC oleh Admin Vault.</span>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: '12px',
+                fontSize: '13px',
+              }}
+            >
+              <div
+                style={{
+                  background: '#ffffff',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid #e2e8f0',
+                }}
+              >
+                <strong style={{ color: '#047857', display: 'block', marginBottom: '2px' }}>
+                  ✅ Ajukan Titip Jual (Sell)
+                </strong>
+                <span style={{ color: '#64748b', fontSize: '12px' }}>
+                  Pengguna dapat mendaftarkan sepatu pribadi untuk diverifikasi dan di-ACC oleh Admin Vault.
+                </span>
               </div>
-              <div style={{ background: '#ffffff', padding: '12px 14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <strong style={{ color: '#047857', display: 'block', marginBottom: '2px' }}>✅ Beli Sepatu Authentic</strong>
-                <span style={{ color: '#64748b', fontSize: '12px' }}>Jelajahi dan beli sneakers yang telah 100% lolos ACC kurator resmi.</span>
+              <div
+                style={{
+                  background: '#ffffff',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid #e2e8f0',
+                }}
+              >
+                <strong style={{ color: '#047857', display: 'block', marginBottom: '2px' }}>
+                  ✅ Beli Sepatu Authentic
+                </strong>
+                <span style={{ color: '#64748b', fontSize: '12px' }}>
+                  Jelajahi dan beli sneakers yang telah 100% lolos ACC kurator resmi.
+                </span>
               </div>
-              <div style={{ background: '#ffffff', padding: '12px 14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <strong style={{ color: '#047857', display: 'block', marginBottom: '2px' }}>✅ Lacak Resi Pesanan</strong>
-                <span style={{ color: '#64748b', fontSize: '12px' }}>Pantau pengiriman resi sepatu di halaman menu Pesanan.</span>
+              <div
+                style={{
+                  background: '#ffffff',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid #e2e8f0',
+                }}
+              >
+                <strong style={{ color: '#047857', display: 'block', marginBottom: '2px' }}>
+                  ✅ Lacak Resi Pesanan
+                </strong>
+                <span style={{ color: '#64748b', fontSize: '12px' }}>
+                  Pantau pengiriman resi sepatu di halaman menu Pesanan.
+                </span>
               </div>
-              <div style={{ background: '#ffffff', padding: '12px 14px', borderRadius: '10px', border: '1px solid #fee2e2' }}>
-                <strong style={{ color: '#b91c1c', display: 'block', marginBottom: '2px' }}>⛔ Kelola Barang Toko</strong>
-                <span style={{ color: '#64748b', fontSize: '12px' }}>Pengguna biasa tidak diizinkan menambah, mengubah, atau menghapus inventaris umum.</span>
+              <div
+                style={{
+                  background: '#ffffff',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid #fee2e2',
+                }}
+              >
+                <strong style={{ color: '#b91c1c', display: 'block', marginBottom: '2px' }}>
+                  ⛔ Kelola Barang &amp; ACC Vault
+                </strong>
+                <span style={{ color: '#64748b', fontSize: '12px' }}>
+                  Pengguna biasa tidak diizinkan mengubah inventaris umum atau menyetujui pesanan keluar.
+                </span>
               </div>
             </div>
           </div>
@@ -378,7 +671,7 @@ function ManageShoes({
               🏠 Kembali ke Beranda
             </button>
 
-            {/* Quick Switch to Admin for Grading / Testing */}
+            {/* Quick Switch to Admin for Testing / Evaluation */}
             <button
               type="button"
               onClick={() => {
@@ -410,10 +703,13 @@ function ManageShoes({
   }
 
   // ===========================================================================
-  // CASE B: Administrator View (Kelola Inventaris + Vault ACC)
+  // CASE B: Administrator View (Pesanan Masuk + Vault ACC + Kelola Inventaris)
   // ===========================================================================
   return (
-    <div className="manage-page-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 16px' }}>
+    <div
+      className="manage-page-container"
+      style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 16px' }}
+    >
       {/* Toast Notification */}
       {adminToast && (
         <div
@@ -472,11 +768,18 @@ function ManageShoes({
               Logged in: <strong>{currentUser?.fullName || 'Shiddiq Yazid (Admin)'}</strong>
             </span>
           </div>
-          <h1 style={{ fontSize: '24px', fontWeight: '900', margin: '0 0 4px 0', letterSpacing: '-0.02em' }}>
-            Portal Admin: Kelola Inventaris &amp; Vault Authentifikasi
+          <h1
+            style={{
+              fontSize: '24px',
+              fontWeight: '900',
+              margin: '0 0 4px 0',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Portal Admin: Pesanan Masuk, Vault ACC &amp; Kelola Barang
           </h1>
           <p style={{ margin: 0, fontSize: '13px', color: '#cbd5e1' }}>
-            Verifikasi legit check sepatu konsinyasi titip jual dan kelola seluruh katalog barang toko.
+            Pantau pesanan sepatu masuk pembeli, jalankan perintah kirim dengan nomor resi, serta kelola verifikasi legit check Vault.
           </p>
         </div>
 
@@ -514,6 +817,60 @@ function ManageShoes({
           border: '1px solid #e2e8f0',
         }}
       >
+        {/* TAB 1: PESANAN MASUK & KIRIM SEPATU */}
+        <button
+          type="button"
+          onClick={() => setAdminTab('orders')}
+          style={{
+            flex: 1,
+            padding: '12px 16px',
+            borderRadius: '9px',
+            border: 'none',
+            fontSize: '13.5px',
+            fontWeight: '800',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            background: adminTab === 'orders' ? '#ffffff' : 'transparent',
+            color: adminTab === 'orders' ? '#006b52' : '#64748b',
+            boxShadow: adminTab === 'orders' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+          }}
+        >
+          <span>📦 Pesanan Masuk &amp; Kirim Sepatu</span>
+          {pendingOrders.length > 0 ? (
+            <span
+              style={{
+                background: '#ef4444',
+                color: '#ffffff',
+                fontSize: '11px',
+                fontWeight: '900',
+                padding: '2px 8px',
+                borderRadius: '9999px',
+                animation: 'pulse 2s infinite',
+              }}
+            >
+              {pendingOrders.length} Perlu Dikirim
+            </span>
+          ) : (
+            <span
+              style={{
+                background: '#e2e8f0',
+                color: '#334155',
+                fontSize: '11px',
+                fontWeight: '800',
+                padding: '2px 8px',
+                borderRadius: '9999px',
+              }}
+            >
+              {orders.length}
+            </span>
+          )}
+        </button>
+
+        {/* TAB 2: TITIP JUAL VAULT ACC */}
         <button
           type="button"
           onClick={() => setAdminTab('vault')}
@@ -535,11 +892,11 @@ function ManageShoes({
             gap: '8px',
           }}
         >
-          <span>🛡️ Vault Authentifikasi (ACC Sepatu)</span>
+          <span>🛡️ Titip Jual (ACC Sepatu Baru)</span>
           {pendingShoes.length > 0 && (
             <span
               style={{
-                background: '#ef4444',
+                background: '#f59e0b',
                 color: '#ffffff',
                 fontSize: '11px',
                 fontWeight: '900',
@@ -552,6 +909,7 @@ function ManageShoes({
           )}
         </button>
 
+        {/* TAB 3: KELOLA SEMUA INVENTARIS */}
         <button
           type="button"
           onClick={() => setAdminTab('inventory')}
@@ -573,7 +931,7 @@ function ManageShoes({
             gap: '8px',
           }}
         >
-          <span>📦 Kelola Semua Inventaris</span>
+          <span>👟 Kelola Inventaris Toko</span>
           <span
             style={{
               background: '#e2e8f0',
@@ -590,7 +948,535 @@ function ManageShoes({
       </div>
 
       {/* =====================================================================
-          TAB 1: VAULT AUTHENTIFIKASI (ACC SEPATU)
+          TAB 1: PESANAN MASUK & PERINTAH KIRIM SEPATU (FULFILLMENT)
+          ===================================================================== */}
+      {adminTab === 'orders' && (
+        <div>
+          {/* Order Metrics Strip */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '14px',
+              marginBottom: '20px',
+            }}
+          >
+            <div
+              style={{
+                background: '#fffbeb',
+                border: '1.5px solid #fde68a',
+                borderRadius: '12px',
+                padding: '16px',
+              }}
+            >
+              <span style={{ fontSize: '11px', fontWeight: '800', color: '#b45309', textTransform: 'uppercase' }}>
+                ⏳ Perlu ACC Vault &amp; Kirim
+              </span>
+              <div style={{ fontSize: '26px', fontWeight: '900', color: '#92400e', marginTop: '4px' }}>
+                {pendingOrders.length} Pesanan
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                borderRadius: '12px',
+                padding: '16px',
+              }}
+            >
+              <span style={{ fontSize: '11px', fontWeight: '800', color: '#1d4ed8', textTransform: 'uppercase' }}>
+                🚚 Sedang Dalam Pengiriman
+              </span>
+              <div style={{ fontSize: '26px', fontWeight: '900', color: '#1e40af', marginTop: '4px' }}>
+                {shippedOrders.length} Paket
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: '#ecfdf5',
+                border: '1px solid #a7f3d0',
+                borderRadius: '12px',
+                padding: '16px',
+              }}
+            >
+              <span style={{ fontSize: '11px', fontWeight: '800', color: '#047857', textTransform: 'uppercase' }}>
+                ✅ Pesanan Selesai / Terkirim
+              </span>
+              <div style={{ fontSize: '26px', fontWeight: '900', color: '#065f46', marginTop: '4px' }}>
+                {completedOrders.length} Pesanan
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '16px',
+              }}
+            >
+              <span style={{ fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase' }}>
+                💰 Total Omset Transaksi
+              </span>
+              <div style={{ fontSize: '22px', fontWeight: '900', color: '#0f172a', marginTop: '4px' }}>
+                {formatRupiah(totalOrdersRevenue)}
+              </div>
+            </div>
+          </div>
+
+          {/* Search & Filter Bar */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '12px',
+              marginBottom: '20px',
+            }}
+          >
+            {/* Filter Pills */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setOrderStatusFilter('all')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '9999px',
+                  fontSize: '12.5px',
+                  fontWeight: '700',
+                  border: orderStatusFilter === 'all' ? '2px solid #006b52' : '1px solid #cbd5e1',
+                  background: orderStatusFilter === 'all' ? '#006b52' : '#ffffff',
+                  color: orderStatusFilter === 'all' ? '#ffffff' : '#334155',
+                  cursor: 'pointer',
+                }}
+              >
+                Semua Pesanan ({orders.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setOrderStatusFilter('pending')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '9999px',
+                  fontSize: '12.5px',
+                  fontWeight: '700',
+                  border: orderStatusFilter === 'pending' ? '2px solid #b45309' : '1px solid #cbd5e1',
+                  background: orderStatusFilter === 'pending' ? '#fef3c7' : '#ffffff',
+                  color: orderStatusFilter === 'pending' ? '#92400e' : '#334155',
+                  cursor: 'pointer',
+                }}
+              >
+                ⏳ Perlu Dikirim ({pendingOrders.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setOrderStatusFilter('shipped')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '9999px',
+                  fontSize: '12.5px',
+                  fontWeight: '700',
+                  border: orderStatusFilter === 'shipped' ? '2px solid #1d4ed8' : '1px solid #cbd5e1',
+                  background: orderStatusFilter === 'shipped' ? '#eff6ff' : '#ffffff',
+                  color: orderStatusFilter === 'shipped' ? '#1e40af' : '#334155',
+                  cursor: 'pointer',
+                }}
+              >
+                🚚 Sedang Dikirim ({shippedOrders.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setOrderStatusFilter('completed')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '9999px',
+                  fontSize: '12.5px',
+                  fontWeight: '700',
+                  border: orderStatusFilter === 'completed' ? '2px solid #047857' : '1px solid #cbd5e1',
+                  background: orderStatusFilter === 'completed' ? '#ecfdf5' : '#ffffff',
+                  color: orderStatusFilter === 'completed' ? '#065f46' : '#334155',
+                  cursor: 'pointer',
+                }}
+              >
+                ✅ Selesai ({completedOrders.length})
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div style={{ minWidth: '260px' }}>
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Cari invoice, pembeli, atau resi..."
+                value={orderSearchQuery}
+                onChange={(e) => setOrderSearchQuery(e.target.value)}
+                style={{ margin: 0, width: '100%' }}
+              />
+            </div>
+          </div>
+
+          {/* Orders List */}
+          {displayOrders.length > 0 ? (
+            <div style={{ display: 'grid', gap: '16px' }}>
+              {displayOrders.map((order) => {
+                const isPendingShipment =
+                  order.status === 'Menunggu ACC & Kirim Vault' ||
+                  order.status === 'Diproses di Vault' ||
+                  order.status?.toLowerCase().includes('menunggu')
+                const isShipped =
+                  order.status === 'Sedang Dikirim' ||
+                  order.status === 'Dikirim' ||
+                  order.status?.toLowerCase().includes('kirim')
+                const isCompleted = order.status === 'Selesai'
+
+                return (
+                  <div
+                    key={order.id}
+                    style={{
+                      background: '#ffffff',
+                      border: isPendingShipment ? '2px solid #f59e0b' : '1px solid #e2e8f0',
+                      borderRadius: '16px',
+                      padding: '20px',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.05)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '14px',
+                    }}
+                  >
+                    {/* Top Row: Invoice, Order Date & Status */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '8px',
+                        borderBottom: '1px solid #f1f5f9',
+                        paddingBottom: '12px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '800', color: '#006b52' }}>
+                          📄 {order.id}
+                        </span>
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>
+                          &bull; {order.date}
+                        </span>
+                        {order.userEmail && (
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              background: '#f1f5f9',
+                              color: '#475569',
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                            }}
+                          >
+                            Akun: {order.userEmail}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Status Badges */}
+                      {isPendingShipment && (
+                        <span
+                          style={{
+                            background: '#fef3c7',
+                            color: '#92400e',
+                            border: '1px solid #fde68a',
+                            padding: '4px 12px',
+                            borderRadius: '9999px',
+                            fontSize: '12px',
+                            fontWeight: '800',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                          }}
+                        >
+                          ⏳ MENUNGGU ACC &amp; PERINTAH KIRIM
+                        </span>
+                      )}
+                      {isShipped && (
+                        <span
+                          style={{
+                            background: '#eff6ff',
+                            color: '#1d4ed8',
+                            border: '1px solid #bfdbfe',
+                            padding: '4px 12px',
+                            borderRadius: '9999px',
+                            fontSize: '12px',
+                            fontWeight: '800',
+                          }}
+                        >
+                          🚚 SEDANG DIKIRIM ({order.courier})
+                        </span>
+                      )}
+                      {isCompleted && (
+                        <span
+                          style={{
+                            background: '#ecfdf5',
+                            color: '#065f46',
+                            border: '1px solid #a7f3d0',
+                            padding: '4px 12px',
+                            borderRadius: '9999px',
+                            fontSize: '12px',
+                            fontWeight: '800',
+                          }}
+                        >
+                          ✓ SELESAI / DITERIMA
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Middle Row: Product info and Buyer Address */}
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                        gap: '16px',
+                        alignItems: 'center',
+                      }}
+                    >
+                      {/* Product Preview */}
+                      <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                        <img
+                          src={order.shoeImage || '/shoes/dunk-low.svg'}
+                          alt={order.shoeName}
+                          style={{
+                            width: '84px',
+                            height: '84px',
+                            objectFit: 'contain',
+                            background: '#f8fafc',
+                            borderRadius: '10px',
+                            padding: '6px',
+                            border: '1px solid #e2e8f0',
+                          }}
+                          onError={(e) => {
+                            e.target.onerror = null
+                            e.target.src = '/shoes/dunk-low.svg'
+                          }}
+                        />
+                        <div>
+                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#006b52' }}>
+                            {order.shoeBrand || 'SNEAKER'}
+                          </span>
+                          <h3 style={{ margin: '2px 0 4px', fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>
+                            {order.shoeName}
+                          </h3>
+                          <div style={{ fontSize: '12.5px', color: '#64748b' }}>
+                            Ukuran: <strong>{order.size}</strong> &bull; Kondisi: <strong>{order.condition}</strong>
+                          </div>
+                          <div style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a', marginTop: '2px' }}>
+                            {formatRupiah(order.price)} + Ongkir {formatRupiah(order.shippingCost)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Buyer & Shipping Destination */}
+                      <div
+                        style={{
+                          background: '#f8fafc',
+                          padding: '12px 14px',
+                          borderRadius: '10px',
+                          border: '1px solid #e2e8f0',
+                          fontSize: '12.5px',
+                          lineHeight: '1.6',
+                        }}
+                      >
+                        <div style={{ color: '#0f172a', fontWeight: '700', marginBottom: '2px' }}>
+                          👤 Penerima: {order.buyerName || 'Pelanggan ZedConsign'}{' '}
+                          <span style={{ color: '#0284c7' }}>({order.buyerPhone})</span>
+                        </div>
+                        <div style={{ color: '#475569', fontSize: '12px' }}>
+                          📍 Alamat: {order.shippingAddress}
+                        </div>
+                        <div style={{ color: '#64748b', fontSize: '11.5px', marginTop: '4px' }}>
+                          Metode: <strong>{order.shippingType}</strong> &bull; Bayar: <strong>{order.paymentMethod} (LUNAS)</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Resi Strip if already dispatched */}
+                    {order.trackingNumber && (
+                      <div
+                        style={{
+                          background: '#f0fdf4',
+                          border: '1px solid #bbf7d0',
+                          borderRadius: '8px',
+                          padding: '8px 14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '8px',
+                          fontSize: '12px',
+                        }}
+                      >
+                        <div>
+                          <strong style={{ color: '#166534' }}>Nomor Resi ({order.courier}): </strong>
+                          <span style={{ fontFamily: 'monospace', fontWeight: '800', color: '#0f172a' }}>
+                            {order.trackingNumber}
+                          </span>
+                          {order.shippedAt && (
+                            <span style={{ color: '#64748b', marginLeft: '8px' }}>
+                              &bull; Dikirim: {order.shippedAt}
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: '11px', color: '#047857', fontWeight: '700' }}>
+                          🛡️ Tag Vault: {order.vaultVerificationTag || '100% Authentic'}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Action Buttons for Administrator */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '8px',
+                        flexWrap: 'wrap',
+                        justifyContent: 'flex-end',
+                        borderTop: '1px solid #f1f5f9',
+                        paddingTop: '12px',
+                      }}
+                    >
+                      {/* ACC & Kirim Button (The core requested command!) */}
+                      {isPendingShipment && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDispatchModal(order)}
+                          style={{
+                            background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                            color: '#ffffff',
+                            border: 'none',
+                            padding: '8px 16px',
+                            borderRadius: '8px',
+                            fontWeight: '800',
+                            fontSize: '13px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)',
+                          }}
+                        >
+                          <span>🚀</span>
+                          <span>ACC Vault &amp; Kirim Sepatu</span>
+                        </button>
+                      )}
+
+                      {/* Re-dispatch / Update Resi */}
+                      {isShipped && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDispatchModal(order)}
+                          style={{
+                            background: '#eff6ff',
+                            color: '#1d4ed8',
+                            border: '1px solid #bfdbfe',
+                            padding: '8px 14px',
+                            borderRadius: '8px',
+                            fontWeight: '700',
+                            fontSize: '12.5px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ✏️ Ubah Resi / Kurir
+                        </button>
+                      )}
+
+                      {/* Surat Jalan Button */}
+                      <button
+                        type="button"
+                        onClick={() => setShippingLabelOrder(order)}
+                        style={{
+                          background: '#f8fafc',
+                          color: '#334155',
+                          border: '1px solid #cbd5e1',
+                          padding: '8px 14px',
+                          borderRadius: '8px',
+                          fontWeight: '700',
+                          fontSize: '12.5px',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <span>📄</span>
+                        <span>Surat Jalan / Label</span>
+                      </button>
+
+                      {/* Mark Completed */}
+                      {isShipped && (
+                        <button
+                          type="button"
+                          onClick={() => handleMarkOrderCompleted(order)}
+                          style={{
+                            background: '#ecfdf5',
+                            color: '#065f46',
+                            border: '1px solid #a7f3d0',
+                            padding: '8px 14px',
+                            borderRadius: '8px',
+                            fontWeight: '700',
+                            fontSize: '12.5px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ✓ Tandai Selesai
+                        </button>
+                      )}
+
+                      {/* View Detail Modal */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedOrderDetail(order)}
+                        style={{
+                          background: '#ffffff',
+                          color: '#64748b',
+                          border: '1px solid #e2e8f0',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          fontWeight: '700',
+                          fontSize: '12.5px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        👁️ Detail
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '16px',
+                padding: '48px 24px',
+                textAlign: 'center',
+                color: '#64748b',
+              }}
+            >
+              <span style={{ fontSize: '36px', display: 'block', marginBottom: '10px' }}>📦</span>
+              <strong style={{ fontSize: '16px', color: '#0f172a', display: 'block', marginBottom: '4px' }}>
+                Tidak Ada Pesanan pada Kategori Ini
+              </strong>
+              <p style={{ fontSize: '13px', margin: 0 }}>
+                Saat pembeli melakukan checkout sepatu di katalog, pesanan akan otomatis masuk ke sini untuk di-ACC dan dikirim oleh Admin Vault.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* =====================================================================
+          TAB 2: VAULT AUTHENTIFIKASI (ACC TITIP JUAL SEPATU)
           ===================================================================== */}
       {adminTab === 'vault' && (
         <div>
@@ -893,7 +1779,7 @@ function ManageShoes({
       )}
 
       {/* =====================================================================
-          TAB 2: KELOLA SEMUA INVENTARIS (CRUD TABLE)
+          TAB 3: KELOLA SEMUA INVENTARIS TOKO (CRUD TABLE)
           ===================================================================== */}
       {adminTab === 'inventory' && (
         <div>
@@ -1092,7 +1978,459 @@ function ManageShoes({
       )}
 
       {/* =====================================================================
-          MODAL: ADD / EDIT FORM
+          MODAL: PERINTAH KIRIM SEPATU & TERBITKAN NOMOR RESI
+          ===================================================================== */}
+      {shippingDispatchOrder && (
+        <div className="modal-overlay" onClick={() => setShippingDispatchOrder(null)}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '580px', width: '92%' }}
+          >
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '20px' }}>🚀</span>
+                <h2 className="modal-title" style={{ fontSize: '18px' }}>
+                  Perintah Kirim Sepatu (ACC Vault)
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={() => setShippingDispatchOrder(null)}
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmDispatch} className="modal-body" style={{ padding: '20px' }}>
+              {/* Order Info Preview */}
+              <div
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '14px',
+                  marginBottom: '18px',
+                  display: 'flex',
+                  gap: '14px',
+                  alignItems: 'center',
+                }}
+              >
+                <img
+                  src={shippingDispatchOrder.shoeImage || '/shoes/dunk-low.svg'}
+                  alt={shippingDispatchOrder.shoeName}
+                  style={{
+                    width: '75px',
+                    height: '75px',
+                    objectFit: 'contain',
+                    background: '#fff',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    padding: '4px',
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#006b52' }}>
+                    INVOICE: {shippingDispatchOrder.id}
+                  </span>
+                  <h4 style={{ margin: '2px 0', fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>
+                    {shippingDispatchOrder.shoeName}
+                  </h4>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>
+                    Ukuran: <strong>{shippingDispatchOrder.size}</strong> &bull; Total:{' '}
+                    <strong style={{ color: '#006b52' }}>
+                      {formatRupiah(
+                        shippingDispatchOrder.price + shippingDispatchOrder.shippingCost
+                      )}
+                    </strong>
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: '#0284c7', marginTop: '2px' }}>
+                    Penerima: <strong>{shippingDispatchOrder.buyerName}</strong> ({shippingDispatchOrder.buyerPhone})
+                  </div>
+                </div>
+              </div>
+
+              {/* Courier Selection */}
+              <div className="form-group">
+                <label className="form-label">Pilih Ekspedisi / Kurir Pengiriman *</label>
+                <select
+                  className="form-select"
+                  value={selectedCourier}
+                  onChange={(e) => setSelectedCourier(e.target.value)}
+                  required
+                >
+                  <option value="JNE Express x ZedConsign">JNE Express x ZedConsign (Layanan Kilat Vault)</option>
+                  <option value="SiCepat Cargo & Reguler">SiCepat Cargo &amp; Reguler</option>
+                  <option value="J&T Express Super">J&amp;T Express Super Fast</option>
+                  <option value="ZedConsign Vault Courier Express">ZedConsign Dedicated Vault Courier (Same-Day Hub)</option>
+                </select>
+              </div>
+
+              {/* Tracking Number Input */}
+              <div className="form-group">
+                <label className="form-label">Nomor Resi Pengiriman (AWB) *</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={customResi}
+                    onChange={(e) => setCustomResi(e.target.value)}
+                    placeholder="Contoh: ZC-JNE-892182-ID"
+                    required
+                    style={{ flex: 1, fontFamily: 'monospace', fontWeight: '700' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const prefix = selectedCourier.includes('JNE') ? 'JNE' : selectedCourier.includes('SiCepat') ? 'SCP' : 'EXP'
+                      setCustomResi(`ZC-${prefix}-${Math.floor(100000 + Math.random() * 900000)}ID`)
+                    }}
+                    style={{
+                      background: '#f1f5f9',
+                      border: '1px solid #cbd5e1',
+                      padding: '0 12px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    🎲 Buat Resi Acak
+                  </button>
+                </div>
+                <small style={{ color: '#64748b', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                  Nomor resi ini akan langsung dapat dipantau oleh pembeli di menu <strong>Pesanan</strong>.
+                </small>
+              </div>
+
+              {/* Kurasi Vault Notes */}
+              <div className="form-group">
+                <label className="form-label">Catatan Tim Kurator ZedConsign Vault</label>
+                <textarea
+                  className="form-textarea"
+                  rows="2"
+                  value={courierNotes}
+                  onChange={(e) => setCourierNotes(e.target.value)}
+                  placeholder="Catatan keaslian fisik, segel keamanan RFID..."
+                />
+              </div>
+
+              {/* Destination Readonly Info */}
+              <div
+                style={{
+                  background: '#f0fdf4',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  fontSize: '12px',
+                  color: '#166534',
+                  marginBottom: '16px',
+                }}
+              >
+                <strong>📍 Dikirim ke Alamat:</strong>
+                <div style={{ marginTop: '2px', color: '#14532d' }}>
+                  {shippingDispatchOrder.shippingAddress}
+                </div>
+              </div>
+
+              <div className="modal-actions" style={{ marginTop: '20px' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShippingDispatchOrder(null)}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  style={{
+                    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                    color: '#ffffff',
+                    fontWeight: '800',
+                  }}
+                >
+                  🚀 Terbitkan Resi &amp; Kirim Sepatu
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          MODAL: SURAT JALAN & LABEL PENGIRIMAN RESMI VAULT
+          ===================================================================== */}
+      {shippingLabelOrder && (
+        <div className="modal-overlay" onClick={() => setShippingLabelOrder(null)}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '600px', width: '92%', maxHeight: '90vh', overflowY: 'auto' }}
+          >
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '20px' }}>📄</span>
+                <h2 className="modal-title" style={{ fontSize: '18px' }}>
+                  Surat Jalan &amp; Label Pengiriman Vault
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={() => setShippingLabelOrder(null)}
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Printable Shipping Label Box */}
+            <div
+              style={{
+                border: '2px dashed #0f172a',
+                borderRadius: '12px',
+                padding: '24px',
+                background: '#ffffff',
+                margin: '16px 20px',
+                color: '#0f172a',
+              }}
+            >
+              {/* Header Label */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  borderBottom: '2px solid #0f172a',
+                  paddingBottom: '12px',
+                  marginBottom: '16px',
+                }}
+              >
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0, letterSpacing: '-0.5px' }}>
+                    ZED CONSIGN
+                  </h2>
+                  <div style={{ fontSize: '10px', fontWeight: '800', color: '#006b52', letterSpacing: '1px' }}>
+                    VAULT AUTHENTICATION DISPATCH CENTER
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '14px', fontWeight: '900' }}>
+                    {shippingLabelOrder.courier || 'JNE Express'}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>
+                    {shippingLabelOrder.shippingType?.includes('Express') ? '⚡ PRIORITY EXPRESS' : 'REGULER CARGO'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Barcode Mock */}
+              <div
+                style={{
+                  textAlign: 'center',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  marginBottom: '16px',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '28px',
+                    letterSpacing: '5px',
+                    fontFamily: 'monospace',
+                    fontWeight: '300',
+                    lineHeight: '1',
+                  }}
+                >
+                  ||||| | |||| ||| ||||| || |||||| | |||||
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: '900', letterSpacing: '2px', marginTop: '6px' }}>
+                  {shippingLabelOrder.trackingNumber || 'ZC-EXP-891024ID'}
+                </div>
+              </div>
+
+              {/* Sender & Receiver Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px', fontSize: '12px' }}>
+                <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>
+                    DARI PENGIRIM:
+                  </div>
+                  <strong style={{ display: 'block', fontSize: '13px', margin: '2px 0' }}>
+                    ZedConsign Vault Hub
+                  </strong>
+                  <div>Gedung Vault Authentifikasi, Tembalang</div>
+                  <div>Kota Semarang, Jawa Tengah 50275</div>
+                  <div>WA: 0812-3456-7890</div>
+                </div>
+
+                <div style={{ background: '#f0fdf4', padding: '10px 12px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                  <div style={{ fontSize: '10px', fontWeight: '800', color: '#166534', textTransform: 'uppercase' }}>
+                    KEPADA PENERIMA:
+                  </div>
+                  <strong style={{ display: 'block', fontSize: '13px', margin: '2px 0' }}>
+                    {shippingLabelOrder.buyerName}
+                  </strong>
+                  <div>Telp: {shippingLabelOrder.buyerPhone}</div>
+                  <div style={{ marginTop: '2px', color: '#14532d' }}>
+                    {shippingLabelOrder.shippingAddress}
+                  </div>
+                </div>
+              </div>
+
+              {/* Item Details */}
+              <div
+                style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '10px 12px',
+                  fontSize: '12px',
+                  marginBottom: '16px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <strong>Produk: {shippingLabelOrder.shoeName}</strong>
+                  <span>Size: {shippingLabelOrder.size}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: '11.5px' }}>
+                  <span>Kondisi: {shippingLabelOrder.condition}</span>
+                  <span>Invoice: {shippingLabelOrder.id}</span>
+                </div>
+              </div>
+
+              {/* Security Seal & Vault Guarantee */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  background: '#0f172a',
+                  color: '#ffffff',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  fontSize: '11px',
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: '800', color: '#00dfa2' }}>
+                    🛡️ 100% AUTHENTIC SECURITY TAG
+                  </div>
+                  <div>Tag ID: {shippingLabelOrder.vaultVerificationTag || 'ZC-AUTH-918201-VAULT'}</div>
+                </div>
+                <div style={{ textAlign: 'right', fontWeight: '700' }}>
+                  STATUS: LUNAS
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-actions" style={{ padding: '0 20px 20px' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setShippingLabelOrder(null)}
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => window.print()}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <span>🖨️</span>
+                <span>Cetak Surat Jalan</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          MODAL: DETAIL LENGKAP PESANAN (INSPEKSI ORDER)
+          ===================================================================== */}
+      {selectedOrderDetail && (
+        <div className="modal-overlay" onClick={() => setSelectedOrderDetail(null)}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '600px', width: '92%', maxHeight: '90vh', overflowY: 'auto' }}
+          >
+            <div className="modal-header">
+              <h2 className="modal-title" style={{ fontSize: '18px' }}>
+                Rincian Pesanan Masuk ({selectedOrderDetail.id})
+              </h2>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={() => setSelectedOrderDetail(null)}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="modal-body" style={{ padding: '20px' }}>
+              <div style={{ display: 'flex', gap: '14px', alignItems: 'center', marginBottom: '16px' }}>
+                <img
+                  src={selectedOrderDetail.shoeImage || '/shoes/dunk-low.svg'}
+                  alt={selectedOrderDetail.shoeName}
+                  style={{
+                    width: '85px',
+                    height: '85px',
+                    objectFit: 'contain',
+                    background: '#f8fafc',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    padding: '4px',
+                  }}
+                />
+                <div>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#006b52' }}>
+                    {selectedOrderDetail.shoeBrand}
+                  </span>
+                  <h3 style={{ margin: '2px 0', fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>
+                    {selectedOrderDetail.shoeName}
+                  </h3>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>
+                    Ukuran: <strong>{selectedOrderDetail.size}</strong> &bull; Kondisi: <strong>{selectedOrderDetail.condition}</strong>
+                  </div>
+                  <div style={{ fontSize: '16px', fontWeight: '900', color: '#006b52', marginTop: '4px' }}>
+                    {formatRupiah(selectedOrderDetail.price)}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px', fontSize: '12.5px', lineHeight: '1.7', border: '1px solid #e2e8f0' }}>
+                <div><strong>Status:</strong> {selectedOrderDetail.status}</div>
+                <div><strong>Tanggal Pesan:</strong> {selectedOrderDetail.date}</div>
+                <div><strong>Nama Pembeli:</strong> {selectedOrderDetail.buyerName}</div>
+                <div><strong>Nomor HP:</strong> {selectedOrderDetail.buyerPhone}</div>
+                <div><strong>Alamat Tujuan:</strong> {selectedOrderDetail.shippingAddress}</div>
+                <div><strong>Metode Pengiriman:</strong> {selectedOrderDetail.shippingType}</div>
+                <div><strong>Kurir:</strong> {selectedOrderDetail.courier}</div>
+                <div><strong>Nomor Resi:</strong> {selectedOrderDetail.trackingNumber || 'Belum diterbitkan'}</div>
+                <div><strong>Metode Pembayaran:</strong> {selectedOrderDetail.paymentMethod}</div>
+              </div>
+            </div>
+
+            <div className="modal-actions" style={{ padding: '0 20px 20px' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setSelectedOrderDetail(null)}
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          MODAL: ADD / EDIT SEPATU INVENTARIS
           ===================================================================== */}
       {isModalOpen && (
         <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
@@ -1340,7 +2678,7 @@ function ManageShoes({
       )}
 
       {/* =====================================================================
-          MODAL: DETAIL & MULTI-PHOTO INSPECTION MODAL
+          MODAL: DETAIL & MULTI-PHOTO INSPECTION MODAL (TITIP JUAL)
           ===================================================================== */}
       {selectedDetailShoe && (
         <div className="modal-overlay" onClick={() => setSelectedDetailShoe(null)}>

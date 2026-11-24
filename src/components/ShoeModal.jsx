@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { formatRupiah } from '../data/shoes.js'
+import { saveOrder } from '../lib/orders.js'
 
 // Standard Sneaker Size Grid Data (Derived from Kick Avenue Catalog)
 const BASE_SIZES_DATA = [
@@ -157,8 +158,6 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
 
   const handleConfirmPaid = () => {
     try {
-      const savedOrdersRaw = localStorage.getItem('zedconsign_user_orders_v1')
-      const ordersList = savedOrdersRaw ? JSON.parse(savedOrdersRaw) : []
       const newOrderRecord = {
         id: orderNumber || `INV/ZC-2026/${Math.floor(10000 + Math.random() * 90000)}`,
         date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) + ', ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB',
@@ -174,7 +173,8 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
         shippingType: shippingMethod === 'express' ? '⚡ Express Shipping (1-2 Hari Kerja dari Vault)' : '📦 Standard Shipping (3-5 Hari Kerja)',
         trackingNumber: `ZC-${shippingMethod === 'express' ? 'EXP' : 'REG'}-${Math.floor(100000 + Math.random() * 900000)}ID`,
         courier: shippingMethod === 'express' ? 'JNE Express x ZedConsign Courier' : 'SiCepat Cargo Reguler',
-        status: 'Diproses di Vault',
+        status: 'Menunggu ACC & Kirim Vault',
+        deliveryStatus: 'Menunggu Pengiriman',
         userId: currentUser?.id,
         userEmail: currentUser?.email,
         buyerName: buyerName || (currentUser?.fullName || 'Member ZedConsign'),
@@ -184,8 +184,7 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
         vaultVerificationTag: `ZC-AUTH-${Math.floor(100000 + Math.random() * 900000)}-VAULT`,
         verifiedBy: 'Chief Authenticator ZedConsign Vault',
       }
-      ordersList.unshift(newOrderRecord)
-      localStorage.setItem('zedconsign_user_orders_v1', JSON.stringify(ordersList))
+      saveOrder(newOrderRecord)
     } catch (e) {
       console.warn('Gagal mencatat pesanan:', e)
     }
