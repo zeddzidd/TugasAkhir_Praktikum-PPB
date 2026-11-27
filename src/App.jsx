@@ -66,18 +66,16 @@ function App() {
       if (saved) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const hasGoadome = parsed.some((s) => s.id === 'shoe-0')
-          if (!hasGoadome) {
-            return DEFAULT_SHOES
-          }
-          // Ensure all shoes have valid images array
+          // Pastikan sepatu tersimpan memuat gambar dan status yang valid tanpa memaksa fallback ke dummy
           return parsed.map((s) => {
-            const defaultMatch = DEFAULT_SHOES.find((d) => d.id === s.id)
+            const primaryImg = (Array.isArray(s.images) && s.images[0]) || s.image || '/shoes/dunk-low.svg'
             return {
               ...s,
+              image: primaryImg,
               images: (Array.isArray(s.images) && s.images.length > 0)
                 ? s.images
-                : (defaultMatch?.images || (s.image ? [s.image] : ['/shoes/dunk-low.svg'])),
+                : [primaryImg],
+              authStatus: s.authStatus || 'verified',
             }
           })
         }
@@ -88,13 +86,20 @@ function App() {
     return DEFAULT_SHOES
   })
 
-  // Synchronize with remote Supabase database on launch
+  // Synchronize with remote Supabase database on launch without wiping local additions
   useEffect(() => {
     async function loadShoesFromDb() {
       try {
         const remoteShoes = await fetchShoesFromSupabase()
         if (remoteShoes && remoteShoes.length > 0) {
-          setShoes(remoteShoes)
+          setShoes((prev) => {
+            const remoteIds = new Set(remoteShoes.map((r) => r.id))
+            // Pertahankan sepatu lokal yang baru diunggah tapi belum sempat tersinkron
+            const localOnly = prev.filter(
+              (p) => !remoteIds.has(p.id) && !DEFAULT_SHOES.some((d) => d.id === p.id)
+            )
+            return [...localOnly, ...remoteShoes]
+          })
         }
       } catch (err) {
         console.warn('Supabase shoe sync error:', err)
@@ -103,12 +108,21 @@ function App() {
     loadShoesFromDb()
   }, [])
 
-  // Persist shoes to localStorage
+  // Persist shoes to localStorage safely (with quota guard for large base64 uploads)
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(shoes))
     } catch (e) {
-      console.error('Gagal menyimpan ke localStorage:', e)
+      console.warn('LocalStorage kuota penuh, mencoba menyimpan versi teroptimasi:', e)
+      try {
+        const optimized = shoes.map((s) => ({
+          ...s,
+          images: Array.isArray(s.images) && s.images.length > 4 ? s.images.slice(0, 4) : s.images,
+        }))
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(optimized))
+      } catch (err2) {
+        console.error('Gagal menyimpan ke localStorage:', err2)
+      }
     }
   }, [shoes])
 

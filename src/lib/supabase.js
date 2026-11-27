@@ -502,6 +502,9 @@ export async function fetchShoesFromSupabase() {
         isFeatured: Boolean(item.is_featured),
         isExpress: Boolean(item.is_express),
         description: item.description || '',
+        authStatus: item.auth_status || 'verified',
+        verifiedAt: item.verified_at || null,
+        verifiedBy: item.verified_by || null,
       }))
     }
     return null
@@ -536,6 +539,9 @@ export async function syncShoeToSupabase(shoe) {
       stock: Number(shoe.stock) || 1,
       is_featured: Boolean(shoe.isFeatured),
       is_express: Boolean(shoe.isExpress),
+      auth_status: shoe.authStatus || 'verified',
+      verified_at: shoe.verifiedAt || new Date().toISOString(),
+      verified_by: shoe.verifiedBy || 'Admin Vault',
     })
   } catch (err) {
     console.warn('Failed to sync shoe to Supabase:', err)
