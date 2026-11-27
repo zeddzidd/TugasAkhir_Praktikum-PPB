@@ -89,20 +89,34 @@ function ManageShoes({
     () =>
       orders.filter(
         (o) =>
+          o.status === 'Menunggu ACC Vault' ||
           o.status === 'Menunggu ACC & Kirim Vault' ||
           o.status === 'Diproses di Vault' ||
-          o.status?.toLowerCase().includes('menunggu')
+          o.status?.toLowerCase().includes('menunggu') ||
+          o.status?.toLowerCase().includes('vault') ||
+          o.status?.toLowerCase().includes('proses')
       ),
     [orders]
   )
   const shippedOrders = useMemo(
     () =>
-      orders.filter(
-        (o) =>
-          o.status === 'Sedang Dikirim' ||
-          o.status === 'Dikirim' ||
-          o.status?.toLowerCase().includes('kirim')
-      ),
+      orders.filter((o) => {
+        const isPending =
+          o.status === 'Menunggu ACC Vault' ||
+          o.status === 'Menunggu ACC & Kirim Vault' ||
+          o.status === 'Diproses di Vault' ||
+          o.status?.toLowerCase().includes('menunggu') ||
+          o.status?.toLowerCase().includes('vault') ||
+          o.status?.toLowerCase().includes('proses')
+
+        return (
+          !isPending &&
+          (o.status === 'Sedang Dikirim' ||
+            o.status === 'Dikirim' ||
+            o.status === 'Dalam Pengiriman' ||
+            o.status?.toLowerCase().includes('kirim'))
+        )
+      }),
     [orders]
   )
   const completedOrders = useMemo(
@@ -1122,13 +1136,18 @@ function ManageShoes({
             <div style={{ display: 'grid', gap: '16px' }}>
               {displayOrders.map((order) => {
                 const isPendingShipment =
+                  order.status === 'Menunggu ACC Vault' ||
                   order.status === 'Menunggu ACC & Kirim Vault' ||
                   order.status === 'Diproses di Vault' ||
-                  order.status?.toLowerCase().includes('menunggu')
+                  order.status?.toLowerCase().includes('menunggu') ||
+                  order.status?.toLowerCase().includes('vault') ||
+                  order.status?.toLowerCase().includes('proses')
                 const isShipped =
-                  order.status === 'Sedang Dikirim' ||
-                  order.status === 'Dikirim' ||
-                  order.status?.toLowerCase().includes('kirim')
+                  !isPendingShipment &&
+                  (order.status === 'Sedang Dikirim' ||
+                    order.status === 'Dikirim' ||
+                    order.status === 'Dalam Pengiriman' ||
+                    order.status?.toLowerCase().includes('kirim'))
                 const isCompleted = order.status === 'Selesai'
 
                 return (

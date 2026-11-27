@@ -177,17 +177,28 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
 
   // Filter berdasarkan search query dan tab status
   const filteredOrders = activeBaseOrders.filter((order) => {
+    const isPending =
+      order.status === 'Menunggu ACC Vault' ||
+      order.status === 'Menunggu ACC & Kirim Vault' ||
+      order.status === 'Diproses di Vault' ||
+      order.status?.toLowerCase().includes('menunggu') ||
+      order.status?.toLowerCase().includes('vault') ||
+      order.status?.toLowerCase().includes('proses')
+
+    const isShipped =
+      !isPending &&
+      (order.status === 'Sedang Dikirim' ||
+        order.status === 'Dikirim' ||
+        order.status === 'Dalam Pengiriman' ||
+        order.status?.toLowerCase().includes('kirim'))
+
+    const isCompleted = order.status === 'Selesai'
+
     const matchStatus =
       selectedStatus === 'all' ||
-      (selectedStatus === 'Vault' &&
-        (order.status?.toLowerCase().includes('vault') ||
-          order.status?.toLowerCase().includes('menunggu') ||
-          order.status?.toLowerCase().includes('proses'))) ||
-      (selectedStatus === 'Dikirim' &&
-        (order.status === 'Sedang Dikirim' ||
-          order.status === 'Dikirim' ||
-          order.status?.toLowerCase().includes('kirim'))) ||
-      (selectedStatus === 'Selesai' && order.status === 'Selesai')
+      (selectedStatus === 'Vault' && isPending) ||
+      (selectedStatus === 'Dikirim' && isShipped) ||
+      (selectedStatus === 'Selesai' && isCompleted)
 
     const q = searchQuery.toLowerCase().trim()
     const matchQuery =
@@ -214,7 +225,9 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
         return { bg: '#ecfdf5', color: '#059669', border: '#a7f3d0' }
       case 'Sedang Dikirim':
       case 'Dikirim':
+      case 'Dalam Pengiriman':
         return { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' }
+      case 'Menunggu ACC Vault':
       case 'Menunggu ACC & Kirim Vault':
       case 'Diproses di Vault':
         return { bg: '#fef3c7', color: '#d97706', border: '#fde68a' }
@@ -488,9 +501,11 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
           {filteredOrders.map((order) => {
             const statusStyle = getStatusBadgeStyle(order.status)
             const isPendingShipment =
+              order.status === 'Menunggu ACC Vault' ||
               order.status === 'Menunggu ACC & Kirim Vault' ||
               order.status === 'Diproses di Vault' ||
-              order.status?.toLowerCase().includes('menunggu')
+              order.status?.toLowerCase().includes('menunggu') ||
+              order.status?.toLowerCase().includes('vault')
 
             return (
               <div
