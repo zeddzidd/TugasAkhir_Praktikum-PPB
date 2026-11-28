@@ -134,20 +134,8 @@ function App() {
     }
   }, [shoes])
 
-  // Strictly redirect away from consign if user is not logged in
-  useEffect(() => {
-    if (!currentUser && tab === 'consign') {
-      setTab('catalog')
-    }
-  }, [currentUser, tab])
-
-  // Tab change with strict auth guard: Sell page cannot be opened without login
+  // Tab navigation
   const handleSelectTab = (newTab) => {
-    if (newTab === 'consign' && !currentUser) {
-      setPendingTabAfterAuth('consign')
-      setAuthModalMode('login')
-      return // Tetap di tab sekarang, halaman sell sama sekali tidak dibuka
-    }
     setTab(newTab)
     try {
       sessionStorage.setItem(TAB_STORAGE_KEY, newTab)
