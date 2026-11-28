@@ -181,7 +181,6 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
     }
   }
 
-  // Instant fill 8 preset angles
   const handleFileChange = (e) => {
     handleFiles(e.target.files)
   }
@@ -248,15 +247,6 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            className="btn-secondary"
-            style={{ padding: '6px 14px', fontSize: '12px', fontWeight: '700' }}
-            onClick={handleFillAllPresets}
-            title="Muat 8 foto sudut preset sekaligus secara instan"
-          >
-            ⚡ Isi Cepat 8 Foto
-          </button>
           {currentImages.length > 0 && (
             <button
               type="button"

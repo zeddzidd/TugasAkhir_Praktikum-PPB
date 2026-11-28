@@ -217,7 +217,7 @@ function Catalog({
     }
 
     if (!addFormData.images || addFormData.images.length === 0) {
-      setAddErrorMsg('Mohon unggah minimal 1 foto sepatu atau klik tombol "⚡ Isi Cepat 8 Foto"!')
+      setAddErrorMsg('Mohon unggah minimal 1 foto asli sepatu Anda!')
       return
     }
 
@@ -963,7 +963,7 @@ function Catalog({
                   <textarea
                     className="form-textarea"
                     rows="3"
-                    placeholder="Tuliskan catatan kondisi, kelengkapan boks, extra laces, atau cerita siluet ini..."
+                    placeholder="Tuliskan catatan kondisi, kelengkapan boks, extra laces, atau catatan lainnya..."
                     value={addFormData.description}
                     onChange={(e) => setAddFormData({ ...addFormData, description: e.target.value })}
                     style={{ background: '#fff' }}
