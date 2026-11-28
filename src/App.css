@@ -564,10 +564,9 @@
   right: 12px;
 }
 
-/* Centered Floating Sneaker - Expanded to FULL width & height */
+/* Centered Floating Sneaker in Hero Carousel - 3:4 Aspect Ratio */
 .hero-shoe-center {
   width: 100%;
-  max-width: 960px;
   height: 100%;
   display: flex;
   align-items: center;
@@ -575,19 +574,37 @@
   position: relative;
   z-index: 2;
   padding: 16px 20px 48px;
-  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.carousel-slide-item:hover .hero-shoe-center {
-  transform: scale(1.02) translateY(-4px);
+.hero-shoe-frame-34 {
+  aspect-ratio: 3 / 4;
+  height: 100%;
+  max-height: 330px;
+  width: auto;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
+}
+
+.carousel-slide-item:hover .hero-shoe-frame-34 {
+  transform: scale(1.03) translateY(-4px);
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.16);
 }
 
 .hero-shoe-image {
   width: 100%;
   height: 100%;
-  max-height: 330px;
+  aspect-ratio: 3 / 4;
   object-fit: contain;
-  filter: drop-shadow(0 20px 28px rgba(0, 0, 0, 0.16));
+  object-position: center;
+  display: block;
+  transition: transform 0.3s ease;
 }
 
 @media (max-width: 640px) {
@@ -595,8 +612,12 @@
     max-width: 100%;
     padding: 10px 10px 40px;
   }
+  .hero-shoe-frame-34 {
+    max-height: 230px;
+    border-radius: 14px;
+  }
   .hero-shoe-image {
-    max-height: 220px;
+    max-height: 230px;
   }
 }
 

@@ -312,18 +312,20 @@ function Catalog({
                 className="carousel-slide-item"
                 onClick={() => setActiveShoe(shoe)}
               >
-                {/* Floating Centered Shoe */}
+                {/* Floating Centered Shoe with 3:4 aspect ratio */}
                 <div className="hero-shoe-center">
-                  <img
-                    src={shoe.image}
-                    alt={shoe.name}
-                    className="hero-shoe-image"
-                    draggable={false}
-                    onError={(e) => {
-                      e.target.onerror = null
-                      e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%23f8fafc"/><text x="200" y="160" font-family="Arial" font-size="44" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'
-                    }}
-                  />
+                  <div className="hero-shoe-frame-34">
+                    <img
+                      src={shoe.image}
+                      alt={shoe.name}
+                      className="hero-shoe-image"
+                      draggable={false}
+                      onError={(e) => {
+                        e.target.onerror = null
+                        e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400"><rect width="300" height="400" fill="%23f8fafc"/><text x="150" y="210" font-family="Arial" font-size="44" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'
+                      }}
+                    />
+                  </div>
                 </div>
 
                 {/* Bottom-Left Information: Product Name & Colorway */}
