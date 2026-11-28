@@ -1,16 +1,5 @@
 import { useState, useRef } from 'react'
 
-const PRESET_IMAGES = [
-  { label: 'Air Max Goadome Foam', value: '/shoes/goadome-foam.svg' },
-  { label: 'Nike Shox Z Calistra', value: '/shoes/shox-calistra.svg' },
-  { label: 'Air Jordan 1 Lost & Found', value: '/shoes/jordan-retro.svg' },
-  { label: 'Nike Dunk Low Panda', value: '/shoes/dunk-low.svg' },
-  { label: 'Yeezy Boost 350 Beluga', value: '/shoes/yeezy-boost.svg' },
-  { label: 'New Balance 990v5', value: '/shoes/new-balance.svg' },
-  { label: 'Adidas Samba OG', value: '/shoes/samba-og.svg' },
-  { label: 'Travis Scott AJ1 Low', value: '/shoes/travis-scott.svg' },
-]
-
 const PHOTO_SUGGESTIONS = [
   '1. Tampak Samping Luar (Lateral)',
   '2. Tampak Samping Dalam (Medial)',
@@ -193,12 +182,6 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
   }
 
   // Instant fill 8 preset angles
-  const handleFillAllPresets = () => {
-    const eightAngles = PRESET_IMAGES.slice(0, maxPhotos).map((p) => p.value)
-    onChange(eightAngles, eightAngles[0])
-    showNotice(`✓ Berhasil memuat ${eightAngles.length} foto sudut sekaligus secara instan!`)
-  }
-
   const handleFileChange = (e) => {
     handleFiles(e.target.files)
   }
@@ -210,16 +193,6 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
 
   const handleDragOver = (e) => {
     e.preventDefault()
-  }
-
-  // Add preset illustration
-  const handleAddPreset = (presetUrl) => {
-    if (currentImages.length >= maxPhotos) {
-      showNotice(`Maksimal ${maxPhotos} foto telah tercapai.`)
-      return
-    }
-    const updated = [...currentImages, presetUrl]
-    onChange(updated, updated[0] || '')
   }
 
   // Add URL
@@ -341,21 +314,14 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
           className={`image-tab-btn ${tab === 'upload' ? 'active' : ''}`}
           onClick={() => setTab('upload')}
         >
-          📷 Upload Berkas / Kamera (Bisa Banyak Foto)
-        </button>
-        <button
-          type="button"
-          className={`image-tab-btn ${tab === 'preset' ? 'active' : ''}`}
-          onClick={() => setTab('preset')}
-        >
-          🎨 Pilihan Ilustrasi Siluet
+          📷 Upload Foto Asli / Galeri HP / Kamera
         </button>
         <button
           type="button"
           className={`image-tab-btn ${tab === 'url' ? 'active' : ''}`}
           onClick={() => setTab('url')}
         >
-          🔗 Tambah via URL Foto
+          🔗 Tambah via Tautan URL Foto
         </button>
       </div>
 
@@ -385,35 +351,24 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
               </svg>
             </div>
             <p className="dropzone-main-text">
-              <strong>Pilih Banyak Foto Sekaligus (Hingga {maxPhotos} Foto)</strong>
+              <strong>Pilih Foto Asli Sepatu (Hingga {maxPhotos} Foto)</strong>
             </p>
             <span className="dropzone-sub-text">
-              Pilih langsung banyak foto dari Galeri HP Anda sekaligus atau jepret langsung via Kamera
+              Pilih langsung foto asli dari Galeri HP Anda atau jepret langsung via Kamera
             </span>
 
-            {/* Quick Action Buttons */}
+            {/* Quick Action Button */}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '14px' }}>
               <button
                 type="button"
                 className="btn-primary"
-                style={{ padding: '10px 18px', fontSize: '13px', borderRadius: '8px' }}
+                style={{ padding: '10px 22px', fontSize: '13px', borderRadius: '8px' }}
                 onClick={(e) => {
                   e.stopPropagation()
                   fileInputRef.current?.click()
                 }}
               >
-                📁 Pilih Banyak Foto dari Galeri HP
-              </button>
-              <button
-                type="button"
-                className="btn-secondary"
-                style={{ padding: '10px 18px', fontSize: '13px', borderRadius: '8px' }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleFillAllPresets()
-                }}
-              >
-                ⚡ Isi Cepat 8 Sudut Preset
+                📁 Buka Galeri HP / Pilih Foto Asli
               </button>
             </div>
 
@@ -437,25 +392,6 @@ function ImageUploader({ images = [], value, onChange, maxPhotos = 8 }) {
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Tab 2: Preset Local Illustrations */}
-      {tab === 'preset' && (
-        <div className="preset-images-grid">
-          {PRESET_IMAGES.map((img) => (
-            <button
-              key={img.value}
-              type="button"
-              className="preset-thumb-btn"
-              onClick={() => handleAddPreset(img.value)}
-              title="Klik untuk menambahkan ilustrasi ini ke galeri"
-            >
-              <img src={img.value} alt={img.label} className="preset-thumb-img" />
-              <span className="preset-thumb-label">{img.label}</span>
-              <span className="preset-add-badge">+ Tambah</span>
-            </button>
-          ))}
         </div>
       )}
 

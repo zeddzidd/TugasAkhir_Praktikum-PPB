@@ -4,16 +4,6 @@ import ImageUploader from '../components/ImageUploader.jsx'
 import { isAdminUser } from '../lib/supabase.js'
 import { getAllOrders, updateOrder, fetchOrdersFromSupabase } from '../lib/orders.js'
 
-const PRESET_IMAGES = [
-  { label: 'Air Max Goadome Foam', value: '/shoes/goadome-foam.svg' },
-  { label: 'Jordan Retro High', value: '/shoes/jordan-retro.svg' },
-  { label: 'Nike Dunk Low', value: '/shoes/dunk-low.svg' },
-  { label: 'Yeezy Boost 350', value: '/shoes/yeezy-boost.svg' },
-  { label: 'New Balance 990', value: '/shoes/new-balance.svg' },
-  { label: 'Adidas Samba OG', value: '/shoes/samba-og.svg' },
-  { label: 'Travis Scott AJ1', value: '/shoes/travis-scott.svg' },
-]
-
 const INITIAL_FORM = {
   name: '',
   brand: 'Nike',
