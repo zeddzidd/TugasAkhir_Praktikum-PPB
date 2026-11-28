@@ -761,22 +761,233 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
             aria-modal="true"
           >
             <div
-              className="order-detail-modal-card invoice-paper-modal"
+              className="order-detail-modal-card"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Tombol Tutup Mengambang di Pojok Kanan Atas */}
-              <button
-                type="button"
-                className="invoice-close-float no-print"
-                onClick={() => setSelectedOrderDetail(null)}
-                title="Tutup Invoice"
-              >
-                &times;
-              </button>
+              {/* =========================================================
+                  1. TAMPILAN INTERAKTIF DI LAYAR (SCREEN ONLY)
+                  ========================================================= */}
+              <div className="od-screen-wrapper no-print">
+                {/* Header Modal */}
+                <div className="od-modal-header">
+                  <div>
+                    <span className="od-header-badge">
+                      🛡️ OFFICIAL INVOICE &amp; VAULT PASSPORT
+                    </span>
+                    <h2 className="od-modal-title">
+                      Rincian Detail Pesanan
+                    </h2>
+                    <div className="od-modal-meta">
+                      <span>No. Invoice: <strong className="od-invoice-chip">{selectedOrderDetail.id}</strong></span>
+                      <span>&bull;</span>
+                      <span>Tanggal: <strong>{orderDate}</strong></span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="od-modal-close-btn"
+                    onClick={() => setSelectedOrderDetail(null)}
+                    title="Tutup Rincian"
+                  >
+                    &times;
+                  </button>
+                </div>
 
-              {/* DOKUMEN FAKTUR INVOICE RESMI (TAMPIL DI LAYAR & HASIL CETAK A4) */}
-              <div className="official-invoice-print-doc">
-                {/* Header Invoice: ZED CONSIGN & FAKTUR INVOICE RESMI */}
+                {/* Status Timeline & Stepper Card */}
+                <div className="od-status-box">
+                  <div className="od-status-header">
+                    <div>
+                      <span style={{ fontSize: '11.5px', color: '#64748b', fontWeight: '600' }}>Status Transaksi:</span>
+                      <div style={{ marginTop: '2px' }}>
+                        <span
+                          className="od-status-pill"
+                          style={{
+                            background: statusStyle.bg,
+                            color: statusStyle.color,
+                            border: `1.5px solid ${statusStyle.border}`,
+                          }}
+                        >
+                          ● {displayStatus}
+                        </span>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '11px', color: '#64748b', background: '#ffffff', padding: '4px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                      Vault Escrow Terverifikasi
+                    </span>
+                  </div>
+
+                  {/* 4-Step Progress Stepper */}
+                  <div className="od-stepper-grid">
+                    <div className="od-step-item">
+                      <div className="od-step-bar" style={{ background: '#006b52' }} />
+                      <span className="od-step-label" style={{ color: '#006b52' }}>1. Dipesan</span>
+                    </div>
+                    <div className="od-step-item">
+                      <div className="od-step-bar" style={{ background: '#006b52' }} />
+                      <span className="od-step-label" style={{ color: '#006b52' }}>2. Masuk Vault</span>
+                    </div>
+                    <div className="od-step-item">
+                      <div className="od-step-bar" style={{ background: isShipped ? '#006b52' : '#cbd5e1' }} />
+                      <span className="od-step-label" style={{ color: isShipped ? '#006b52' : '#94a3b8' }}>3. ACC &amp; Dikirim</span>
+                    </div>
+                    <div className="od-step-item">
+                      <div className="od-step-bar" style={{ background: isCompleted ? '#006b52' : '#cbd5e1' }} />
+                      <span className="od-step-label" style={{ color: isCompleted ? '#006b52' : '#94a3b8' }}>4. Diterima</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sepatu / Produk Card */}
+                <div className="od-shoe-card">
+                  <div className="od-shoe-img-box">
+                    <img
+                      src={selectedOrderDetail.shoeImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90" viewBox="0 0 90 90"><rect width="90" height="90" fill="%23f1f5f9"/><text x="45" y="52" font-family="Arial" font-size="28" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'}
+                      alt={selectedOrderDetail.shoeName}
+                      className="od-shoe-img"
+                    />
+                  </div>
+                  <div className="od-shoe-info">
+                    <span className="od-shoe-brand">{selectedOrderDetail.shoeBrand}</span>
+                    <h3 className="od-shoe-name">{selectedOrderDetail.shoeName}</h3>
+                    <div className="od-shoe-badges">
+                      <span className="od-badge-tag">Ukuran: <strong>{selectedOrderDetail.size}</strong></span>
+                      <span className="od-badge-tag">Kondisi: <strong>{selectedOrderDetail.condition}</strong></span>
+                      <span className="od-badge-tag" style={{ background: '#ecfdf5', color: '#059669', borderColor: '#a7f3d0' }}>✓ 100% Authentic</span>
+                    </div>
+                    <div className="od-shoe-price">{formatRupiah(selectedOrderDetail.price)}</div>
+                  </div>
+                </div>
+
+                {/* Resi Pengiriman (High-Contrast Black & Sharp) */}
+                <div className="od-tracking-box">
+                  <div>
+                    <div className="od-tracking-title">
+                      Nomor Resi Pengiriman ({selectedOrderDetail.courier || 'SiCepat Cargo Reguler'})
+                    </div>
+                    <div className="od-tracking-number">
+                      {selectedOrderDetail.trackingNumber || 'Menunggu terbit resi Vault'}
+                    </div>
+                  </div>
+
+                  {selectedOrderDetail.trackingNumber && (
+                    <button
+                      type="button"
+                      className="od-btn-copy"
+                      onClick={() => handleCopyResi(selectedOrderDetail.trackingNumber)}
+                      title="Salin nomor resi pengiriman"
+                    >
+                      {copyToast ? '✓ Berhasil Disalin!' : '📋 Salin Resi'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Vault Authentication Guarantee */}
+                <div className="od-vault-guarantee">
+                  <div className="od-vault-icon-circle">
+                    🛡️
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <span className="od-vault-title">ZedConsign 100% Authentic Guaranteed</span>
+                    <span className="od-vault-desc">
+                      Tag RFID/NFC Vault: <strong style={{ color: '#00dfa2' }}>{selectedOrderDetail.vaultVerificationTag}</strong> &bull; Diverifikasi oleh {selectedOrderDetail.verifiedBy || 'Tim Kurator Vault'}.
+                    </span>
+                  </div>
+                </div>
+
+                {/* Two-Column Details Grid */}
+                <div className="od-details-grid">
+                  {/* Penerima & Alamat */}
+                  <div className="od-info-block">
+                    <div className="od-info-heading">
+                      📍 Penerima &amp; Pengiriman
+                    </div>
+                    <div><strong>Nama:</strong> {selectedOrderDetail.buyerName || 'Pembeli Terverifikasi'}</div>
+                    <div><strong>No. Telp:</strong> {selectedOrderDetail.buyerPhone || '-'}</div>
+                    <div style={{ marginTop: '4px' }}>
+                      <strong>Alamat Tujuan:</strong>
+                      <div style={{ color: '#475569', marginTop: '2px' }}>{selectedOrderDetail.shippingAddress || '-'}</div>
+                    </div>
+                    <div style={{ marginTop: '4px' }}>
+                      <strong>Layanan:</strong> {selectedOrderDetail.shippingType || 'Express Delivery'} ({selectedOrderDetail.courier || 'Ekspedisi Rekanan'})
+                    </div>
+                  </div>
+
+                  {/* Rincian Finansial & Metode Bayar */}
+                  <div className="od-ledger">
+                    <div className="od-info-heading">
+                      💳 Rincian Pembayaran
+                    </div>
+                    <div className="od-ledger-row">
+                      <span>Harga Sepatu:</span>
+                      <strong>{formatRupiah(selectedOrderDetail.price)}</strong>
+                    </div>
+                    <div className="od-ledger-row">
+                      <span>Ongkos Kirim:</span>
+                      <strong>{formatRupiah(selectedOrderDetail.shippingCost || 0)}</strong>
+                    </div>
+                    <div className="od-ledger-row">
+                      <span>Metode Bayar:</span>
+                      <span>{selectedOrderDetail.paymentMethod || 'QRIS Instant BCA'}</span>
+                    </div>
+                    <div className="od-ledger-row">
+                      <span>Asuransi &amp; Kurasi Vault:</span>
+                      <span style={{ color: '#059669', fontWeight: '700' }}>Gratis (Rp 0)</span>
+                    </div>
+                    <div className="od-ledger-total">
+                      <span>Total Lunas:</span>
+                      <span>{formatRupiah(totalAmount)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lampiran Foto Bukti Transfer */}
+                {selectedOrderDetail.paymentProof && (
+                  <div className="od-proof-card">
+                    <img
+                      src={selectedOrderDetail.paymentProof}
+                      alt="Bukti Transfer Pembeli"
+                      className="od-proof-thumb"
+                    />
+                    <div>
+                      <span style={{ fontSize: '11px', color: '#006b52', fontWeight: '800', textTransform: 'uppercase' }}>
+                        ✓ Bukti Pembayaran Sah Diterima
+                      </span>
+                      <h4 style={{ margin: '2px 0', fontSize: '13.5px', color: '#0f172a' }}>
+                        Transaksi Terverifikasi oleh Sistem Kasir Digital
+                      </h4>
+                      <p style={{ margin: 0, fontSize: '11.5px', color: '#64748b' }}>
+                        Pembayaran via {selectedOrderDetail.paymentMethod || 'QRIS Instant BCA'} telah disahkan dan dana disimpan di rekening escrow Vault.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="od-modal-actions">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="od-btn-print"
+                    title="Cetak Faktur / Simpan sebagai PDF A4"
+                  >
+                    🖨️ Cetak / Unduh PDF (A4)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedOrderDetail(null)}
+                    className="od-btn-close"
+                  >
+                    Tutup Rincian
+                  </button>
+                </div>
+              </div>
+
+              {/* =========================================================
+                  2. DEDICATED OFFICIAL INVOICE DOKUMEN CETAK (PRINT ONLY A4)
+                     HANYA BAGIAN SATU INI SAJA YANG DICETAK / UNDUH PDF
+                  ========================================================= */}
+              <div className="official-invoice-print-doc print-only">
+                {/* Header Invoice: ZED CONSIGN & FAKTUR INVOICE RESMI (Tanpa alamat/kampus di atasnya) */}
                 <div className="print-invoice-header">
                   <div>
                     <h1 className="print-logo-brand">ZED CONSIGN</h1>
@@ -813,16 +1024,6 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
                     <p>
                       <strong>Nomor Resi Vault:</strong>{' '}
                       <strong>{selectedOrderDetail.trackingNumber || 'Dalam Proses Packing Vault'}</strong>
-                      {selectedOrderDetail.trackingNumber && (
-                        <button
-                          type="button"
-                          className="btn-copy-resi-mini no-print"
-                          onClick={() => handleCopyResi(selectedOrderDetail.trackingNumber)}
-                          title="Salin nomor resi pengiriman"
-                        >
-                          {copyToast ? '✓ Disalin' : 'Salin'}
-                        </button>
-                      )}
                     </p>
                     <p><strong>Security Tag RFID:</strong> {selectedOrderDetail.vaultVerificationTag || 'ZC-AUTH-VAULT'}</p>
                   </div>
@@ -925,25 +1126,6 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
                       [ SYSTEM VERIFIED &bull; ZEDCONSIGN VAULT ]
                     </div>
                   </div>
-                </div>
-
-                {/* Tombol Aksi di Layar (Sembunyi Saat Cetak) */}
-                <div className="invoice-modal-actions no-print">
-                  <button
-                    type="button"
-                    onClick={() => window.print()}
-                    className="od-btn-print"
-                    title="Cetak Faktur / Simpan sebagai PDF A4"
-                  >
-                    🖨️ Cetak / Unduh PDF (A4)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedOrderDetail(null)}
-                    className="od-btn-close"
-                  >
-                    Tutup Invoice
-                  </button>
                 </div>
               </div>
             </div>
