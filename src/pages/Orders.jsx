@@ -83,7 +83,7 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
   // =========================================================================
   if (!currentUser) {
     return (
-      <div style={{ maxWidth: '640px', margin: '40px auto 80px', padding: '0 16px', textAlign: 'center' }}>
+      <div className="no-print" style={{ maxWidth: '640px', margin: '40px auto 80px', padding: '0 16px', textAlign: 'center' }}>
         <div
           style={{
             background: 'var(--bg-card)',
@@ -157,7 +157,7 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
   // =========================================================================
   if (!isAdmin && myOrders.length === 0) {
     return (
-      <div style={{ maxWidth: '640px', margin: '40px auto 80px', padding: '0 16px', textAlign: 'center' }}>
+      <div className="no-print" style={{ maxWidth: '640px', margin: '40px auto 80px', padding: '0 16px', textAlign: 'center' }}>
         <div
           style={{
             background: 'var(--bg-card)',
@@ -305,8 +305,10 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
   }
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 16px 80px' }}>
-      {/* Toast Notification */}
+    <div className="orders-page-root">
+      {/* Seluruh isi halaman pesanan di balik modal diberi no-print agar HILANG TOTAL saat cetak PDF */}
+      <div className="orders-page-content no-print" style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 16px 80px' }}>
+        {/* Toast Notification */}
       {copyToast && (
         <div
           style={{
@@ -737,6 +739,7 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
           </button>
         </div>
       )}
+      </div>
 
       {/* DETAIL MODAL (Halaman Detail Pesanan & Resi Pengiriman) */}
       {selectedOrderDetail && (() => {
@@ -1135,7 +1138,7 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
 
       {/* QUICK DISPATCH MODAL IN ORDERS PAGE */}
       {quickDispatchOrder && (
-        <div className="modal-overlay" onClick={() => setQuickDispatchOrder(null)}>
+        <div className="modal-overlay no-print" onClick={() => setQuickDispatchOrder(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px', width: '92%' }}>
             <div className="modal-header">
               <h2 className="modal-title" style={{ fontSize: '18px' }}>

@@ -5614,62 +5614,80 @@ button.support-action-item:hover {
     color: #0f172a !important;
     margin: 0 !important;
     padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Hide entire web app UI */
+  /* Default: Hide everything from print */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Explicitly collapse background list, navigation, footer and interactive screen elements so they take 0 layout space */
   .no-print,
+  .orders-page-content,
   .app-header,
   .mobile-bottom-nav,
   .support-floating-container,
   .app-footer,
   .catalog-page-container,
   .orders-container,
+  .od-screen-wrapper,
   .modal-close-btn,
   .od-modal-close-btn,
   .offline-banner {
     display: none !important;
     visibility: hidden !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
   }
 
-  /* Reset modal overlay so it doesn't float as a modal */
-  .modal-overlay {
+  /* Reset modal overlay and parent wrappers so only the invoice is rendered at the top of page 1 */
+  #root,
+  .app-container,
+  main,
+  .orders-page-root,
+  .modal-overlay,
+  .order-detail-modal-card {
     position: static !important;
+    display: block !important;
     background: transparent !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    display: block !important;
-    overflow: visible !important;
-  }
-
-  .order-detail-modal-card {
-    position: static !important;
-    max-width: 100% !important;
     width: 100% !important;
-    box-shadow: none !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
     border: none !important;
     border-radius: 0 !important;
-    max-height: none !important;
+    box-shadow: none !important;
     overflow: visible !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    background: #ffffff !important;
   }
 
-  /* Display Dedicated Official Invoice Document */
+  /* Display Exclusively the Official Invoice Document and its children */
+  .official-invoice-print-doc,
+  .official-invoice-print-doc * {
+    visibility: visible !important;
+  }
+
   .official-invoice-print-doc {
     display: block !important;
+    position: relative !important;
     width: 100% !important;
     max-width: 100% !important;
     padding: 0 !important;
     margin: 0 auto !important;
     color: #0f172a !important;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
-    font-size: 10.5pt !important;
-    line-height: 1.4 !important;
+    font-size: 10pt !important;
+    line-height: 1.35 !important;
+    page-break-after: avoid !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
