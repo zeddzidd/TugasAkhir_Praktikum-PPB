@@ -374,7 +374,7 @@ function ManageShoes({
     const shoeImgs =
       Array.isArray(shoe.images) && shoe.images.length > 0
         ? shoe.images
-        : [shoe.image || '/shoes/dunk-low.svg']
+        : [shoe.image || '']
 
     setFormData({
       name: shoe.name,
@@ -383,7 +383,7 @@ function ManageShoes({
       size: shoe.size,
       condition: shoe.condition,
       price: shoe.price,
-      image: shoeImgs[0] || '/shoes/dunk-low.svg',
+      image: shoeImgs[0] || '',
       images: shoeImgs,
       stock: shoe.stock || 1,
       consignor: shoe.consignor || 'ZedConsign Verified Seller',
@@ -416,8 +416,8 @@ function ManageShoes({
     const finalImages =
       Array.isArray(formData.images) && formData.images.length > 0
         ? formData.images
-        : [formData.image || '/shoes/dunk-low.svg']
-    const primaryImage = finalImages[0] || '/shoes/dunk-low.svg'
+        : [formData.image || '']
+    const primaryImage = finalImages[0] || ''
 
     if (editingShoe) {
       onUpdateShoe({
@@ -1276,7 +1276,7 @@ function ManageShoes({
                       {/* Product Preview */}
                       <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
                         <img
-                          src={order.shoeImage || '/shoes/dunk-low.svg'}
+                          src={order.shoeImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="84" height="84" viewBox="0 0 84 84"><rect width="84" height="84" fill="%23f1f5f9"/><text x="42" y="48" font-family="Arial" font-size="26" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'}
                           alt={order.shoeName}
                           style={{
                             width: '84px',
@@ -1289,7 +1289,7 @@ function ManageShoes({
                           }}
                           onError={(e) => {
                             e.target.onerror = null
-                            e.target.src = '/shoes/dunk-low.svg'
+                            e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="84" height="84" viewBox="0 0 84 84"><rect width="84" height="84" fill="%23f1f5f9"/><text x="42" y="48" font-family="Arial" font-size="26" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'
                           }}
                         />
                         <div>
@@ -1656,7 +1656,7 @@ function ManageShoes({
                     {/* Top Row: Thumbnail & Main Info */}
                     <div style={{ display: 'flex', gap: '14px', marginBottom: '12px' }}>
                       <img
-                        src={(Array.isArray(shoe.images) && shoe.images[0]) || shoe.image || '/shoes/dunk-low.svg'}
+                        src={(Array.isArray(shoe.images) && shoe.images[0]) || shoe.image || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="80" viewBox="0 0 100 80"><rect width="100" height="80" fill="%23f1f5f9"/><text x="50" y="46" font-family="Arial" font-size="24" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'}
                         alt={shoe.name}
                         onClick={() => setSelectedDetailShoe(shoe)}
                         style={{
@@ -1884,12 +1884,12 @@ function ManageShoes({
                           title="Klik untuk melihat detail lengkap sepatu"
                         >
                           <img
-                            src={shoe.image || (Array.isArray(shoe.images) && shoe.images[0]) || '/shoes/dunk-low.svg'}
+                            src={shoe.image || (Array.isArray(shoe.images) && shoe.images[0]) || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><rect width="60" height="60" fill="%23f1f5f9"/><text x="30" y="36" font-family="Arial" font-size="20" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'}
                             alt={shoe.name}
                             className="table-shoe-thumb"
                             onError={(e) => {
                               e.target.onerror = null
-                              e.target.src = '/shoes/dunk-low.svg'
+                              e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><rect width="60" height="60" fill="%23f1f5f9"/><text x="30" y="36" font-family="Arial" font-size="20" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'
                             }}
                           />
                           <div>
@@ -2056,7 +2056,7 @@ function ManageShoes({
                 }}
               >
                 <img
-                  src={shippingDispatchOrder.shoeImage || '/shoes/dunk-low.svg'}
+                  src={shippingDispatchOrder.shoeImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="75" height="75" viewBox="0 0 75 75"><rect width="75" height="75" fill="%23f1f5f9"/><text x="37" y="44" font-family="Arial" font-size="22" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'}
                   alt={shippingDispatchOrder.shoeName}
                   style={{
                     width: '75px',
@@ -2413,7 +2413,7 @@ function ManageShoes({
             <div className="modal-body" style={{ padding: '20px' }}>
               <div style={{ display: 'flex', gap: '14px', alignItems: 'center', marginBottom: '16px' }}>
                 <img
-                  src={selectedOrderDetail.shoeImage || '/shoes/dunk-low.svg'}
+                  src={selectedOrderDetail.shoeImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="85" height="85" viewBox="0 0 85 85"><rect width="85" height="85" fill="%23f1f5f9"/><text x="42" y="48" font-family="Arial" font-size="24" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'}
                   alt={selectedOrderDetail.shoeName}
                   style={{
                     width: '85px',
@@ -2797,7 +2797,7 @@ function ManageShoes({
                   src={
                     (Array.isArray(selectedDetailShoe.images) && selectedDetailShoe.images[0]) ||
                     selectedDetailShoe.image ||
-                    '/shoes/dunk-low.svg'
+                    'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="130" height="100" viewBox="0 0 130 100"><rect width="130" height="100" fill="%23f1f5f9"/><text x="65" y="58" font-family="Arial" font-size="32" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'
                   }
                   alt={selectedDetailShoe.name}
                   style={{

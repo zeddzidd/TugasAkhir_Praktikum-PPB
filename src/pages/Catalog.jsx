@@ -321,7 +321,7 @@ function Catalog({
                     draggable={false}
                     onError={(e) => {
                       e.target.onerror = null
-                      e.target.src = '/shoes/dunk-low.svg'
+                      e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%23f8fafc"/><text x="200" y="160" font-family="Arial" font-size="44" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'
                     }}
                   />
                 </div>

@@ -1,189 +1,27 @@
-export const DEFAULT_SHOES = [
-  {
-    id: 'shoe-shox',
-    name: 'Nike Shox Z Calistra',
-    colorway: 'SHOX Z CALISTRA',
-    brand: 'Nike',
-    category: 'Sneakers',
-    size: 'US 7W / EU 38',
-    condition: 'Brand New In Box (BNIB)',
-    price: 2899000,
-    image: '/shoes/shox-calistra.svg',
-    images: [
-      '/shoes/shox-calistra.svg',
-      '/shoes/goadome-foam.svg',
-      '/shoes/dunk-low.svg',
-      '/shoes/jordan-retro.svg',
-    ],
-    description:
-      'Siluet hybrid Mary Jane futuristik ikonik dari lini Nike Shox. Mengombinasikan patent leather upper dengan buckle strap adjustable, diamond textured tooling, dan twin heel Shox column pods berventilasi udara.',
-    consignor: 'ZedConsign Vault',
-    stock: 4,
-    isFeatured: true,
-    isExpress: true,
-  },
-  {
-    id: 'shoe-0',
-    name: 'Nike Air Max Goadome Low Foam',
-    colorway: 'SP GREEN GOBLIN',
-    brand: 'Nike',
-    category: 'Sneakers',
-    size: 'US 9 / EU 42.5',
-    condition: 'Brand New In Box (BNIB)',
-    price: 3299000,
-    image: '/shoes/goadome-foam.svg',
-    images: [
-      '/shoes/goadome-foam.svg',
-      '/shoes/shox-calistra.svg',
-      '/shoes/new-balance.svg',
-      '/shoes/yeezy-boost.svg',
-    ],
-    description:
-      'Siluet rugged futuristik Nike Air Max Goadome Low Foam dalam colorway ikonik SP Green Goblin. Mengombinasikan molded metallic foam upper bertekstur wave dengan visible full-length Air-Sole unit dan rugged all-terrain lug outsole.',
-    consignor: 'ZedConsign Vault',
-    stock: 3,
-    isFeatured: true,
-    isExpress: true,
-  },
-  {
-    id: 'shoe-1',
-    name: 'Air Jordan 1 High OG Chicago Lost & Found',
-    colorway: 'VARSITY RED / BLACK / SAIL',
-    brand: 'Jordan',
-    category: 'Basketball',
-    size: 'US 9 / EU 42.5',
-    condition: 'Brand New In Box (BNIB)',
-    price: 4850000,
-    image: '/shoes/jordan-retro.svg',
-    images: [
-      '/shoes/jordan-retro.svg',
-      '/shoes/travis-scott.svg',
-      '/shoes/dunk-low.svg',
-      '/shoes/shox-calistra.svg',
-    ],
-    description:
-      'Ikonik sneaker legendaris dengan siluet high-top klasik colorway Chicago merah putih. Dilengkapi vintage aged midsole, crackled leather collar, dan receipt retro 1986. 100% Original Authentic verified by ZedConsign legit check.',
-    consignor: 'Zed Store Official',
-    stock: 2,
-    isFeatured: true,
-    isExpress: true,
-  },
-  {
-    id: 'shoe-2',
-    name: 'Nike Dunk Low Retro White Black Panda',
-    colorway: 'WHITE / BLACK PANDA',
-    brand: 'Nike',
-    category: 'Sneakers',
-    size: 'US 8.5 / EU 42',
-    condition: 'Brand New In Box (BNIB)',
-    price: 1850000,
-    image: '/shoes/dunk-low.svg',
-    images: [
-      '/shoes/dunk-low.svg',
-      '/shoes/samba-og.svg',
-      '/shoes/jordan-retro.svg',
-      '/shoes/new-balance.svg',
-    ],
-    description:
-      'Siluet paling populer dan versatile untuk daily wear. Kombinasi warna clean monochrome hitam dan putih dengan premium leather upper dan outsole karet berdaya cengkeram tinggi.',
-    consignor: 'Consignor #4102',
-    stock: 5,
-    isFeatured: true,
-    isExpress: true,
-  },
-  {
-    id: 'shoe-3',
-    name: 'Yeezy Boost 350 V2 Beluga Reflective',
-    colorway: 'BELUGA / STEEPLE GREY / SOLAR RED',
-    brand: 'Adidas',
-    category: 'Running',
-    size: 'US 9.5 / EU 43',
-    condition: 'Like New (VNDS 9.8/10)',
-    price: 3600000,
-    image: '/shoes/yeezy-boost.svg',
-    images: [
-      '/shoes/yeezy-boost.svg',
-      '/shoes/new-balance.svg',
-      '/shoes/samba-og.svg',
-      '/shoes/dunk-low.svg',
-    ],
-    description:
-      'Desain futuristik dari lini Yeezy dengan Primeknit upper berbenang reflective, pull-tab oranye khas Beluga, dan midsole Boost berbalut ribbed cage TPU yang sangat empuk.',
-    consignor: 'Consignor #1401',
-    stock: 1,
-    isFeatured: true,
-    isExpress: false,
-  },
-  {
-    id: 'shoe-4',
-    name: 'New Balance 990v5 Made in USA Grey',
-    colorway: 'CASTLEROCK / GREY',
-    brand: 'New Balance',
-    category: 'Casual',
-    size: 'US 9 / EU 42.5',
-    condition: 'Brand New In Box (BNIB)',
-    price: 3950000,
-    image: '/shoes/new-balance.svg',
-    images: [
-      '/shoes/new-balance.svg',
-      '/shoes/samba-og.svg',
-      '/shoes/goadome-foam.svg',
-      '/shoes/yeezy-boost.svg',
-    ],
-    description:
-      'Definisi kenyamanan dan kemewahan understated sneaker dad shoe. Dibuat di Amerika Serikat dengan material pigskin suede premium, breathable mesh, dan teknologi bantalan ENCAP.',
-    consignor: 'Zed Vault',
-    stock: 3,
-    isFeatured: false,
-    isExpress: true,
-  },
-  {
-    id: 'shoe-5',
-    name: 'Adidas Samba OG Cloud White Core Black',
-    colorway: 'CLOUD WHITE / CORE BLACK / GUM',
-    brand: 'Adidas',
-    category: 'Casual',
-    size: 'US 8 / EU 41',
-    condition: 'Brand New In Box (BNIB)',
-    price: 2150000,
-    image: '/shoes/samba-og.svg',
-    images: [
-      '/shoes/samba-og.svg',
-      '/shoes/dunk-low.svg',
-      '/shoes/new-balance.svg',
-      '/shoes/shox-calistra.svg',
-    ],
-    description:
-      'Klasik sepak bola era 1950 yang kini menjadi siluet street-style paling dicari di dunia. Suede T-toe overlay, 3-stripes hitam kontras, dan sol karet gum bernuansa vintage.',
-    consignor: 'Consignor #4108',
-    stock: 4,
-    isFeatured: false,
-    isExpress: true,
-  },
-  {
-    id: 'shoe-6',
-    name: 'Travis Scott x Air Jordan 1 Low Mocha',
-    colorway: 'SAIL / UNIVERSITY RED / RIDGEROCK',
-    brand: 'Jordan',
-    category: 'Sneakers',
-    size: 'US 10 / EU 44',
-    condition: 'Brand New In Box (BNIB)',
-    price: 18500000,
-    image: '/shoes/travis-scott.svg',
-    images: [
-      '/shoes/travis-scott.svg',
-      '/shoes/jordan-retro.svg',
-      '/shoes/dunk-low.svg',
-      '/shoes/yeezy-boost.svg',
-    ],
-    description:
-      'Holy Grail kolaborasi Travis Scott x Jordan Brand. Menampilkan reverse oversized Swoosh warna sail, suede nubuck cokelat mocha kaya serat, dan signature Cactus Jack embroidery merah di tumit.',
-    consignor: 'Zed Collector Consignment',
-    stock: 1,
-    isFeatured: true,
-    isExpress: false,
-  },
-]
+// Seluruh sepatu dummy SVG telah dihapus sesuai permintaan agar hanya menampilkan sepatu asli hasil unggahan
+export const DEFAULT_SHOES = []
+
+export function isDummyShoe(shoe) {
+  if (!shoe) return false
+  const id = String(shoe.id || '')
+  if (
+    id === 'shoe-shox' ||
+    id === 'shoe-0' ||
+    id === 'shoe-1' ||
+    id === 'shoe-2' ||
+    id === 'shoe-3' ||
+    id === 'shoe-4' ||
+    id === 'shoe-5' ||
+    id === 'shoe-6'
+  ) {
+    return true
+  }
+  const img = String(shoe.image || '')
+  if (img.startsWith('/shoes/') && img.endsWith('.svg')) {
+    return true
+  }
+  return false
+}
 
 export const CATEGORIES = ['Semua', 'Sneakers', 'Basketball', 'Running', 'Casual', 'Apparel', 'Luxury']
 

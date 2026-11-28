@@ -9,7 +9,7 @@ import ManageShoes from './pages/ManageShoes.jsx'
 import ConsignInfo from './pages/ConsignInfo.jsx'
 import Orders from './pages/Orders.jsx'
 import Profile from './pages/Profile.jsx'
-import { DEFAULT_SHOES } from './data/shoes.js'
+import { DEFAULT_SHOES, isDummyShoe } from './data/shoes.js'
 import { fetchOrdersFromSupabase } from './lib/orders.js'
 import {
   getCurrentSession,
@@ -70,39 +70,43 @@ function App() {
       if (saved) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Pastikan sepatu tersimpan memuat gambar dan status yang valid tanpa memaksa fallback ke dummy
-          return parsed.map((s) => {
-            const primaryImg = (Array.isArray(s.images) && s.images[0]) || s.image || '/shoes/dunk-low.svg'
-            return {
-              ...s,
-              image: primaryImg,
-              images: (Array.isArray(s.images) && s.images.length > 0)
-                ? s.images
-                : [primaryImg],
-              authStatus: s.authStatus || 'verified',
-            }
-          })
+          // Bersihkan seluruh sepatu dummy, pertahankan hanya sepatu asli hasil upload
+          const realOnly = parsed.filter((s) => !isDummyShoe(s))
+          if (realOnly.length > 0) {
+            return realOnly.map((s) => {
+              const primaryImg = (Array.isArray(s.images) && s.images[0]) || s.image || ''
+              return {
+                ...s,
+                image: primaryImg,
+                images: (Array.isArray(s.images) && s.images.length > 0)
+                  ? s.images
+                  : [primaryImg],
+                authStatus: s.authStatus || 'verified',
+              }
+            })
+          }
         }
       }
     } catch (e) {
-      console.warn('Gagal memuat katalog dari localStorage, memuat default.', e)
+      console.warn('Gagal memuat katalog dari localStorage:', e)
     }
-    return DEFAULT_SHOES
+    return []
   })
 
-  // Synchronize with remote Supabase database on launch without wiping local additions
+  // Synchronize with remote Supabase database on launch without dummy data
   useEffect(() => {
     async function loadShoesFromDb() {
       try {
         const remoteShoes = await fetchShoesFromSupabase()
         if (remoteShoes && remoteShoes.length > 0) {
+          const cleanRemote = remoteShoes.filter((s) => !isDummyShoe(s))
           setShoes((prev) => {
-            const remoteIds = new Set(remoteShoes.map((r) => r.id))
-            // Pertahankan sepatu lokal yang baru diunggah tapi belum sempat tersinkron
+            const remoteIds = new Set(cleanRemote.map((r) => r.id))
+            // Pertahankan sepatu lokal yang baru diunggah dan bukan dummy
             const localOnly = prev.filter(
-              (p) => !remoteIds.has(p.id) && !DEFAULT_SHOES.some((d) => d.id === p.id)
+              (p) => !remoteIds.has(p.id) && !isDummyShoe(p)
             )
-            return [...localOnly, ...remoteShoes]
+            return [...localOnly, ...cleanRemote]
           })
         }
       } catch (err) {
@@ -171,13 +175,12 @@ function App() {
   }
 
   const handleResetDefault = () => {
-    setShoes(DEFAULT_SHOES)
+    setShoes([])
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_SHOES))
+      localStorage.removeItem(STORAGE_KEY)
     } catch (e) {
       console.error(e)
     }
-    syncAllShoesToSupabase(DEFAULT_SHOES)
   }
 
   const handleManualSyncSupabase = async () => {

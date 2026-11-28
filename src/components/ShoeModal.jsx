@@ -202,8 +202,8 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
         shoeId: shoe.id,
         shoeName: shoe.name,
         shoeBrand: shoe.brand,
-        shoeImage: (Array.isArray(shoe.images) && shoe.images[0]) || shoe.image || '/shoes/dunk-low.svg',
-        shoeImages: Array.isArray(shoe.images) && shoe.images.length > 0 ? shoe.images : [shoe.image || '/shoes/dunk-low.svg'],
+        shoeImage: (Array.isArray(shoe.images) && shoe.images[0]) || shoe.image || '',
+        shoeImages: Array.isArray(shoe.images) && shoe.images.length > 0 ? shoe.images : [shoe.image || ''],
         size: getSizeLabel(selectedSize),
         condition: shoe.condition,
         price: currentPrice,
@@ -238,7 +238,7 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
     if (shoe?.image) {
       return [shoe.image]
     }
-    return ['/shoes/dunk-low.svg']
+    return ['data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="300" height="300" fill="%23f8fafc"/><text x="150" y="160" font-family="Arial" font-size="40" fill="%2394a3b8" text-anchor="middle">👟</text></svg>']
   }, [shoe])
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0)
@@ -472,7 +472,7 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
                 className="ka-main-shoe-img"
                 onError={(e) => {
                   e.target.onerror = null
-                  e.target.src = '/shoes/dunk-low.svg'
+                  e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="300" height="300" fill="%23f8fafc"/><text x="150" y="160" font-family="Arial" font-size="40" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'
                 }}
               />
 
@@ -536,7 +536,7 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
                       className="ka-thumb-img"
                       onError={(e) => {
                         e.target.onerror = null
-                        e.target.src = '/shoes/dunk-low.svg'
+                        e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><rect width="60" height="60" fill="%23f1f5f9"/><text x="30" y="36" font-family="Arial" font-size="18" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'
                       }}
                     />
                     <span className="ka-thumb-number">#{idx + 1}</span>
@@ -1003,7 +1003,7 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
 
                   <div className="ka-checkout-product-row">
                     <img
-                      src={shoe.image || '/shoes/dunk-low.svg'}
+                      src={shoe.image || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="70" height="70" viewBox="0 0 70 70"><rect width="70" height="70" fill="%23f8fafc"/><text x="35" y="42" font-family="Arial" font-size="22" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'}
                       alt={shoe.name}
                       className="ka-checkout-thumb"
                     />

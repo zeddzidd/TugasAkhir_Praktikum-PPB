@@ -493,10 +493,10 @@ export async function fetchShoesFromSupabase() {
         size: item.size,
         condition: item.condition,
         price: Number(item.price),
-        image: item.image || (Array.isArray(item.images) && item.images[0]) || '/shoes/dunk-low.svg',
+        image: item.image || (Array.isArray(item.images) && item.images[0]) || '',
         images: Array.isArray(item.images) && item.images.length > 0
           ? item.images
-          : [item.image || '/shoes/dunk-low.svg'],
+          : [item.image || ''],
         consignor: item.consignor || 'ZedConsign Verified Seller',
         stock: Number(item.stock) || 1,
         isFeatured: Boolean(item.is_featured),
@@ -520,7 +520,7 @@ export async function fetchShoesFromSupabase() {
 export async function syncShoeToSupabase(shoe) {
   if (!isSupabaseConfigured || !supabase) return
   try {
-    const primaryImg = (Array.isArray(shoe.images) && shoe.images[0]) || shoe.image || '/shoes/dunk-low.svg'
+    const primaryImg = (Array.isArray(shoe.images) && shoe.images[0]) || shoe.image || ''
     const finalImgs = Array.isArray(shoe.images) && shoe.images.length > 0 ? shoe.images : [primaryImg]
 
     await supabase.from('shoes').upsert({
@@ -570,7 +570,7 @@ export async function syncAllShoesToSupabase(shoesList) {
   try {
     const formatted = shoesList.map((shoe) => {
       const primaryImg =
-        (Array.isArray(shoe.images) && shoe.images[0]) || shoe.image || '/shoes/dunk-low.svg'
+        (Array.isArray(shoe.images) && shoe.images[0]) || shoe.image || ''
       const finalImgs =
         Array.isArray(shoe.images) && shoe.images.length > 0 ? shoe.images : [primaryImg]
 

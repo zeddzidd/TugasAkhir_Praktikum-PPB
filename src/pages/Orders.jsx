@@ -623,7 +623,7 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
                 {/* Middle Row: Shoe Photo, Details, and Pricing */}
                 <div style={{ display: 'flex', gap: '18px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <img
-                    src={order.shoeImage || '/shoes/dunk-low.svg'}
+                    src={order.shoeImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="84" height="84" viewBox="0 0 84 84"><rect width="84" height="84" fill="%23f1f5f9"/><text x="42" y="48" font-family="Arial" font-size="26" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'}
                     alt={order.shoeName}
                     style={{
                       width: '84px',
@@ -636,7 +636,7 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
                     }}
                     onError={(e) => {
                       e.target.onerror = null
-                      e.target.src = '/shoes/dunk-low.svg'
+                      e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="84" height="84" viewBox="0 0 84 84"><rect width="84" height="84" fill="%23f1f5f9"/><text x="42" y="48" font-family="Arial" font-size="26" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'
                     }}
                   />
 
@@ -890,7 +890,7 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
               }}
             >
               <img
-                src={selectedOrderDetail.shoeImage || '/shoes/dunk-low.svg'}
+                src={selectedOrderDetail.shoeImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90" viewBox="0 0 90 90"><rect width="90" height="90" fill="%23f1f5f9"/><text x="45" y="52" font-family="Arial" font-size="28" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'}
                 alt={selectedOrderDetail.shoeName}
                 style={{
                   width: '90px',

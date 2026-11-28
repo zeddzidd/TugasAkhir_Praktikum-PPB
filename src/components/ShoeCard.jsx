@@ -5,13 +5,13 @@ function ShoeCard({ shoe, onSelect }) {
     <article className="kick-card" onClick={() => onSelect(shoe)}>
       <div className="kick-card-image-wrap">
         <img
-          src={shoe.image || '/shoes/dunk-low.svg'}
+          src={shoe.image || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23f1f5f9"/><text x="100" y="105" font-family="Arial" font-size="28" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'}
           alt={shoe.name}
           className="kick-card-image"
           loading="lazy"
           onError={(e) => {
             e.target.onerror = null
-            e.target.src = '/shoes/dunk-low.svg'
+            e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="%23f1f5f9"/><text x="100" y="105" font-family="Arial" font-size="28" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'
           }}
         />
 
