@@ -5170,3 +5170,690 @@ button.support-action-item:hover {
   margin-top: 4px;
   color: #9ca3af;
 }
+
+/* ==========================================================================
+   Order Detail Modal & Official Invoice Print
+   ========================================================================== */
+.order-detail-modal-card {
+  background: #ffffff;
+  border-radius: 20px;
+  max-width: 680px;
+  width: 94%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.28);
+  position: relative;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  animation: smoothModalEntrance 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.order-detail-modal-card::-webkit-scrollbar {
+  width: 6px;
+}
+.order-detail-modal-card::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+.order-detail-modal-card::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.order-detail-modal-card::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.od-screen-wrapper {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.od-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 14px;
+}
+.od-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fef3c7;
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #fde68a;
+  margin-bottom: 6px;
+}
+.od-modal-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.od-modal-meta {
+  font-size: 12.5px;
+  color: #64748b;
+  margin-top: 4px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.od-invoice-chip {
+  background: #f1f5f9;
+  color: #006b52;
+  font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+}
+.od-modal-close-btn {
+  background: #f1f5f9;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 22px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+.od-modal-close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Status & Stepper Card */
+.od-status-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px;
+}
+.od-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.od-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+.od-stepper-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.od-step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+.od-step-bar {
+  height: 4px;
+  width: 100%;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+.od-step-label {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+/* Shoe Item Card */
+.od-shoe-card {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+.od-shoe-img-box {
+  width: 95px;
+  height: 95px;
+  flex-shrink: 0;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.od-shoe-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.od-shoe-info {
+  flex: 1;
+}
+.od-shoe-brand {
+  font-size: 11px;
+  font-weight: 800;
+  color: #006b52;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.od-shoe-name {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 2px 0 6px;
+  line-height: 1.25;
+}
+.od-shoe-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.od-badge-tag {
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+.od-shoe-price {
+  font-size: 18px;
+  font-weight: 900;
+  color: #006b52;
+}
+
+/* Tracking / Resi Box (HIGH CONTRAST!) */
+.od-tracking-box {
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.od-tracking-title {
+  font-size: 11.5px;
+  color: #166534;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.od-tracking-number {
+  font-size: 17px;
+  font-weight: 900;
+  color: #0f172a !important; /* High contrast black/slate */
+  letter-spacing: 1.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  margin-top: 2px;
+}
+.od-btn-copy {
+  background: #006b52;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+.od-btn-copy:hover {
+  background: #00503e;
+}
+
+/* Vault Guarantee Card */
+.od-vault-guarantee {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border: 1px solid rgba(0, 223, 162, 0.4);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #ffffff;
+}
+.od-vault-icon-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(0, 223, 162, 0.15);
+  border: 1px solid rgba(0, 223, 162, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.od-vault-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+  display: block;
+}
+.od-vault-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  display: block;
+  margin-top: 2px;
+}
+
+/* Two Column Details Grid */
+.od-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 600px) {
+  .od-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.od-info-block {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.od-info-heading {
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 4px;
+}
+
+/* Payment Breakdown Ledger */
+.od-ledger {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+.od-ledger-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 6px;
+}
+.od-ledger-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 2px dashed #cbd5e1;
+  padding-top: 10px;
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 900;
+  color: #006b52;
+}
+
+/* Payment Proof Thumbnail */
+.od-proof-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.od-proof-thumb {
+  max-width: 90px;
+  max-height: 90px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+/* Modal Actions */
+.od-modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+.od-btn-print {
+  flex: 1.2;
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+.od-btn-print:hover {
+  background: #000000;
+  transform: translateY(-1px);
+}
+.od-btn-close {
+  flex: 0.8;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.od-btn-close:hover {
+  background: #e2e8f0;
+}
+
+/* Print-only element hidden on screen */
+.print-only {
+  display: none !important;
+}
+
+/* ==========================================================================
+   OFFICIAL INVOICE PRINT STYLES (A4 Single Page)
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 12mm;
+  }
+
+  /* Reset browser print background & margins */
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide entire web app UI */
+  .no-print,
+  .app-header,
+  .mobile-bottom-nav,
+  .support-floating-container,
+  .app-footer,
+  .catalog-page-container,
+  .orders-container,
+  .modal-close-btn,
+  .od-modal-close-btn,
+  .offline-banner {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Reset modal overlay so it doesn't float as a modal */
+  .modal-overlay {
+    position: static !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  .order-detail-modal-card {
+    position: static !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+  }
+
+  /* Display Dedicated Official Invoice Document */
+  .official-invoice-print-doc {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    color: #0f172a !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+    font-size: 10.5pt !important;
+    line-height: 1.4 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .print-invoice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2.5px solid #0f172a;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+  }
+
+  .print-logo-brand {
+    font-size: 22pt;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    color: #0f172a;
+    margin: 0;
+    line-height: 1;
+  }
+
+  .print-sub-brand {
+    font-size: 8pt;
+    color: #475569;
+    margin-top: 4px;
+    line-height: 1.35;
+  }
+
+  .print-invoice-title-block {
+    text-align: right;
+  }
+
+  .print-invoice-title {
+    font-size: 15pt;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: 0.5px;
+    margin: 0 0 3px;
+  }
+
+  .print-invoice-number {
+    font-size: 10pt;
+    font-weight: 800;
+    color: #006b52;
+    font-family: monospace;
+  }
+
+  .print-badge-paid {
+    display: inline-block;
+    border: 1.5px solid #059669;
+    background: #ecfdf5 !important;
+    color: #059669 !important;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 900;
+    font-size: 8.5pt;
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  .print-parties-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 10px 12px;
+    background: #f8fafc !important;
+  }
+
+  .print-party-col h4 {
+    margin: 0 0 4px;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 3px;
+  }
+
+  .print-party-col p {
+    margin: 2px 0;
+    font-size: 9pt;
+    color: #0f172a;
+  }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 14px;
+  }
+
+  .print-table th {
+    background: #0f172a !important;
+    color: #ffffff !important;
+    font-size: 8.5pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 10px;
+    text-align: left;
+    border: 1px solid #0f172a;
+  }
+
+  .print-table td {
+    padding: 8px 10px;
+    font-size: 9pt;
+    border: 1px solid #e2e8f0;
+    color: #0f172a;
+    vertical-align: middle;
+  }
+
+  .print-table tr:nth-child(even) td {
+    background: #f8fafc !important;
+  }
+
+  .print-bottom-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 14px;
+    margin-bottom: 12px;
+  }
+
+  .print-vault-stamp-box {
+    border: 1.5px dashed #006b52;
+    border-radius: 6px;
+    padding: 10px 12px;
+    background: #f0fdf4 !important;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .print-stamp-title {
+    font-size: 9.5pt;
+    font-weight: 900;
+    color: #006b52;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .print-stamp-text {
+    font-size: 8pt;
+    color: #166534;
+    line-height: 1.35;
+  }
+
+  .print-ledger-box {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 10px 12px;
+    background: #ffffff !important;
+  }
+
+  .print-ledger-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9pt;
+    color: #334155;
+    margin-bottom: 3px;
+  }
+
+  .print-ledger-total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5pt;
+    font-weight: 900;
+    color: #0f172a;
+    border-top: 1.5px solid #0f172a;
+    padding-top: 5px;
+    margin-top: 5px;
+  }
+
+  .print-footer-disclaimer {
+    border-top: 1px solid #cbd5e1;
+    padding-top: 6px;
+    font-size: 7.5pt;
+    color: #64748b;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    line-height: 1.35;
+  }
+}

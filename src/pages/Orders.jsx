@@ -739,369 +739,394 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
       )}
 
       {/* DETAIL MODAL (Halaman Detail Pesanan & Resi Pengiriman) */}
-      {selectedOrderDetail && (
-        <div
-          className="modal-overlay"
-          onClick={() => setSelectedOrderDetail(null)}
-          role="dialog"
-          aria-modal="true"
-        >
+      {selectedOrderDetail && (() => {
+        const rawStatus = selectedOrderDetail.status || 'Menunggu ACC Vault'
+        const displayStatus =
+          rawStatus === 'Menunggu ACC & Kirim Vault' ? 'Menunggu ACC Vault' : rawStatus
+        const statusStyle = getStatusBadgeStyle(displayStatus)
+        const isShipped =
+          displayStatus === 'Sedang Dikirim' ||
+          displayStatus === 'Dikirim' ||
+          displayStatus === 'Dalam Pengiriman' ||
+          displayStatus === 'Selesai'
+        const isCompleted = displayStatus === 'Selesai'
+        const orderDate = selectedOrderDetail.date || '24 November 2026'
+        const totalAmount = (selectedOrderDetail.price || 0) + (selectedOrderDetail.shippingCost || 0)
+
+        return (
           <div
-            className="auth-modal-card"
-            style={{ maxWidth: '640px', width: '92%', maxHeight: '90vh', overflowY: 'auto' }}
-            onClick={(e) => e.stopPropagation()}
+            className="modal-overlay"
+            onClick={() => setSelectedOrderDetail(null)}
+            role="dialog"
+            aria-modal="true"
           >
-            {/* Header Modal */}
             <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderBottom: '1px solid var(--border-color)',
-                paddingBottom: '14px',
-                marginBottom: '18px',
-              }}
+              className="order-detail-modal-card"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div>
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: '800',
-                    color: 'var(--accent)',
-                    letterSpacing: '1px',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  OFFICIAL INVOICE &amp; VAULT PASSPORT
-                </span>
-                <h2 style={{ fontSize: '20px', fontWeight: '800', margin: '2px 0 0', color: 'var(--text-main)' }}>
-                  Rincian Detail Pesanan
-                </h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedOrderDetail(null)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '24px',
-                  color: 'var(--text-dim)',
-                  cursor: 'pointer',
-                }}
-              >
-                &times;
-              </button>
-            </div>
-
-            {/* Status Timeline */}
-            <div
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                borderRadius: '12px',
-                padding: '16px',
-                marginBottom: '20px',
-                border: '1px solid var(--border-color)',
-              }}
-            >
-              <div style={{ fontSize: '12px', color: 'var(--text-dim)', marginBottom: '6px' }}>Status Saat Ini:</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                <span
-                  style={{
-                    padding: '4px 14px',
-                    borderRadius: '9999px',
-                    fontWeight: '800',
-                    fontSize: '13px',
-                    ...getStatusBadgeStyle(selectedOrderDetail.status),
-                  }}
-                >
-                  {selectedOrderDetail.status}
-                </span>
-                <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>
-                  (Invoice: {selectedOrderDetail.id})
-                </span>
-              </div>
-
-              {/* Progress Steps Indicator */}
-              {(() => {
-                const isShipped =
-                  selectedOrderDetail.status === 'Sedang Dikirim' ||
-                  selectedOrderDetail.status === 'Dikirim' ||
-                  selectedOrderDetail.status === 'Selesai'
-                const isCompleted = selectedOrderDetail.status === 'Selesai'
-
-                return (
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(4, 1fr)',
-                      gap: '4px',
-                      textAlign: 'center',
-                      fontSize: '10px',
-                      fontWeight: '700',
-                      color: 'var(--text-dim)',
-                    }}
-                  >
-                    <div style={{ color: 'var(--accent)' }}>
-                      <div style={{ height: '4px', background: 'var(--accent)', borderRadius: '2px', marginBottom: '4px' }} />
-                      1. Dipesan
-                    </div>
-                    <div style={{ color: 'var(--accent)' }}>
-                      <div style={{ height: '4px', background: 'var(--accent)', borderRadius: '2px', marginBottom: '4px' }} />
-                      2. Masuk Vault
-                    </div>
-                    <div style={{ color: isShipped ? 'var(--accent)' : 'rgba(255,255,255,0.2)' }}>
-                      <div
-                        style={{
-                          height: '4px',
-                          background: isShipped ? 'var(--accent)' : 'rgba(255,255,255,0.2)',
-                          borderRadius: '2px',
-                          marginBottom: '4px',
-                        }}
-                      />
-                      3. ACC &amp; Dikirim
-                    </div>
-                    <div style={{ color: isCompleted ? 'var(--accent)' : 'rgba(255,255,255,0.2)' }}>
-                      <div
-                        style={{
-                          height: '4px',
-                          background: isCompleted ? 'var(--accent)' : 'rgba(255,255,255,0.2)',
-                          borderRadius: '2px',
-                          marginBottom: '4px',
-                        }}
-                      />
-                      4. Diterima
+              {/* =========================================================
+                  TAMPILAN INTERAKTIF DI LAYAR (SCREEN ONLY)
+                  ========================================================= */}
+              <div className="od-screen-wrapper no-print">
+                {/* Header Modal */}
+                <div className="od-modal-header">
+                  <div>
+                    <span className="od-header-badge">
+                      🛡️ OFFICIAL INVOICE &amp; VAULT PASSPORT
+                    </span>
+                    <h2 className="od-modal-title">
+                      Rincian Detail Pesanan
+                    </h2>
+                    <div className="od-modal-meta">
+                      <span>No. Invoice: <strong className="od-invoice-chip">{selectedOrderDetail.id}</strong></span>
+                      <span>&bull;</span>
+                      <span>Tanggal: <strong>{orderDate}</strong></span>
                     </div>
                   </div>
-                )
-              })()}
-            </div>
-
-            {/* Item Info Box */}
-            <div
-              style={{
-                display: 'flex',
-                gap: '16px',
-                alignItems: 'center',
-                padding: '14px',
-                background: 'var(--bg-card)',
-                borderRadius: '12px',
-                border: '1px solid var(--border-color)',
-                marginBottom: '18px',
-              }}
-            >
-              <img
-                src={selectedOrderDetail.shoeImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90" viewBox="0 0 90 90"><rect width="90" height="90" fill="%23f1f5f9"/><text x="45" y="52" font-family="Arial" font-size="28" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'}
-                alt={selectedOrderDetail.shoeName}
-                style={{
-                  width: '90px',
-                  height: '90px',
-                  objectFit: 'contain',
-                  background: 'rgba(255,255,255,0.03)',
-                  borderRadius: '10px',
-                  padding: '6px',
-                }}
-              />
-              <div style={{ flex: 1 }}>
-                <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: '800' }}>
-                  {selectedOrderDetail.shoeBrand}
-                </span>
-                <h3 style={{ fontSize: '16px', fontWeight: '800', margin: '2px 0 6px', color: 'var(--text-main)' }}>
-                  {selectedOrderDetail.shoeName}
-                </h3>
-                <div style={{ fontSize: '12px', color: 'var(--text-dim)' }}>
-                  Ukuran: <strong>{selectedOrderDetail.size}</strong> &bull; Kondisi: <strong>{selectedOrderDetail.condition}</strong>
+                  <button
+                    type="button"
+                    className="od-modal-close-btn"
+                    onClick={() => setSelectedOrderDetail(null)}
+                    title="Tutup Rincian"
+                  >
+                    &times;
+                  </button>
                 </div>
-                <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--accent)', marginTop: '4px' }}>
-                  {formatRupiah(selectedOrderDetail.price)}
+
+                {/* Status Timeline & Stepper Card */}
+                <div className="od-status-box">
+                  <div className="od-status-header">
+                    <div>
+                      <span style={{ fontSize: '11.5px', color: '#64748b', fontWeight: '600' }}>Status Transaksi:</span>
+                      <div style={{ marginTop: '2px' }}>
+                        <span
+                          className="od-status-pill"
+                          style={{
+                            background: statusStyle.bg,
+                            color: statusStyle.color,
+                            border: `1.5px solid ${statusStyle.border}`,
+                          }}
+                        >
+                          ● {displayStatus}
+                        </span>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '11px', color: '#64748b', background: '#ffffff', padding: '4px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                      Vault Escrow Terverifikasi
+                    </span>
+                  </div>
+
+                  {/* 4-Step Progress Stepper */}
+                  <div className="od-stepper-grid">
+                    <div className="od-step-item">
+                      <div className="od-step-bar" style={{ background: '#006b52' }} />
+                      <span className="od-step-label" style={{ color: '#006b52' }}>1. Dipesan</span>
+                    </div>
+                    <div className="od-step-item">
+                      <div className="od-step-bar" style={{ background: '#006b52' }} />
+                      <span className="od-step-label" style={{ color: '#006b52' }}>2. Masuk Vault</span>
+                    </div>
+                    <div className="od-step-item">
+                      <div className="od-step-bar" style={{ background: isShipped ? '#006b52' : '#cbd5e1' }} />
+                      <span className="od-step-label" style={{ color: isShipped ? '#006b52' : '#94a3b8' }}>3. ACC &amp; Dikirim</span>
+                    </div>
+                    <div className="od-step-item">
+                      <div className="od-step-bar" style={{ background: isCompleted ? '#006b52' : '#cbd5e1' }} />
+                      <span className="od-step-label" style={{ color: isCompleted ? '#006b52' : '#94a3b8' }}>4. Diterima</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sepatu / Produk Card */}
+                <div className="od-shoe-card">
+                  <div className="od-shoe-img-box">
+                    <img
+                      src={selectedOrderDetail.shoeImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90" viewBox="0 0 90 90"><rect width="90" height="90" fill="%23f1f5f9"/><text x="45" y="52" font-family="Arial" font-size="28" fill="%2394a3b8" text-anchor="middle">👟</text></svg>'}
+                      alt={selectedOrderDetail.shoeName}
+                      className="od-shoe-img"
+                    />
+                  </div>
+                  <div className="od-shoe-info">
+                    <span className="od-shoe-brand">{selectedOrderDetail.shoeBrand}</span>
+                    <h3 className="od-shoe-name">{selectedOrderDetail.shoeName}</h3>
+                    <div className="od-shoe-badges">
+                      <span className="od-badge-tag">Ukuran: <strong>{selectedOrderDetail.size}</strong></span>
+                      <span className="od-badge-tag">Kondisi: <strong>{selectedOrderDetail.condition}</strong></span>
+                      <span className="od-badge-tag" style={{ background: '#ecfdf5', color: '#059669', borderColor: '#a7f3d0' }}>✓ 100% Authentic</span>
+                    </div>
+                    <div className="od-shoe-price">{formatRupiah(selectedOrderDetail.price)}</div>
+                  </div>
+                </div>
+
+                {/* Resi Pengiriman (High-Contrast Black & Sharp) */}
+                <div className="od-tracking-box">
+                  <div>
+                    <div className="od-tracking-title">
+                      Nomor Resi Pengiriman ({selectedOrderDetail.courier || 'SiCepat Cargo Reguler'})
+                    </div>
+                    <div className="od-tracking-number">
+                      {selectedOrderDetail.trackingNumber || 'Menunggu terbit resi Vault'}
+                    </div>
+                  </div>
+
+                  {selectedOrderDetail.trackingNumber && (
+                    <button
+                      type="button"
+                      className="od-btn-copy"
+                      onClick={() => handleCopyResi(selectedOrderDetail.trackingNumber)}
+                      title="Salin nomor resi pengiriman"
+                    >
+                      {copyToast ? '✓ Berhasil Disalin!' : '📋 Salin Resi'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Vault Authentication Guarantee */}
+                <div className="od-vault-guarantee">
+                  <div className="od-vault-icon-circle">
+                    🛡️
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <span className="od-vault-title">ZedConsign 100% Authentic Guaranteed</span>
+                    <span className="od-vault-desc">
+                      Tag RFID/NFC Vault: <strong style={{ color: '#00dfa2' }}>{selectedOrderDetail.vaultVerificationTag}</strong> &bull; Diverifikasi oleh {selectedOrderDetail.verifiedBy || 'Tim Kurator Vault'}.
+                    </span>
+                  </div>
+                </div>
+
+                {/* Two-Column Details Grid */}
+                <div className="od-details-grid">
+                  {/* Penerima & Alamat */}
+                  <div className="od-info-block">
+                    <div className="od-info-heading">
+                      📍 Penerima &amp; Pengiriman
+                    </div>
+                    <div><strong>Nama:</strong> {selectedOrderDetail.buyerName || 'Pembeli Terverifikasi'}</div>
+                    <div><strong>No. Telp:</strong> {selectedOrderDetail.buyerPhone || '-'}</div>
+                    <div style={{ marginTop: '4px' }}>
+                      <strong>Alamat Tujuan:</strong>
+                      <div style={{ color: '#475569', marginTop: '2px' }}>{selectedOrderDetail.shippingAddress || '-'}</div>
+                    </div>
+                    <div style={{ marginTop: '4px' }}>
+                      <strong>Layanan:</strong> {selectedOrderDetail.shippingType || 'Express Delivery'} ({selectedOrderDetail.courier || 'Ekspedisi Rekanan'})
+                    </div>
+                  </div>
+
+                  {/* Rincian Finansial & Metode Bayar */}
+                  <div className="od-ledger">
+                    <div className="od-info-heading">
+                      💳 Rincian Pembayaran
+                    </div>
+                    <div className="od-ledger-row">
+                      <span>Harga Sepatu:</span>
+                      <strong>{formatRupiah(selectedOrderDetail.price)}</strong>
+                    </div>
+                    <div className="od-ledger-row">
+                      <span>Ongkos Kirim:</span>
+                      <strong>{formatRupiah(selectedOrderDetail.shippingCost || 0)}</strong>
+                    </div>
+                    <div className="od-ledger-row">
+                      <span>Metode Bayar:</span>
+                      <span>{selectedOrderDetail.paymentMethod || 'QRIS Instant BCA'}</span>
+                    </div>
+                    <div className="od-ledger-row">
+                      <span>Asuransi &amp; Kurasi Vault:</span>
+                      <span style={{ color: '#059669', fontWeight: '700' }}>Gratis (Rp 0)</span>
+                    </div>
+                    <div className="od-ledger-total">
+                      <span>Total Lunas:</span>
+                      <span>{formatRupiah(totalAmount)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lampiran Foto Bukti Transfer */}
+                {selectedOrderDetail.paymentProof && (
+                  <div className="od-proof-card">
+                    <img
+                      src={selectedOrderDetail.paymentProof}
+                      alt="Bukti Transfer Pembeli"
+                      className="od-proof-thumb"
+                    />
+                    <div>
+                      <span style={{ fontSize: '11px', color: '#006b52', fontWeight: '800', textTransform: 'uppercase' }}>
+                        ✓ Bukti Pembayaran Sah Diterima
+                      </span>
+                      <h4 style={{ margin: '2px 0', fontSize: '13.5px', color: '#0f172a' }}>
+                        Transaksi Terverifikasi oleh Sistem Kasir Digital
+                      </h4>
+                      <p style={{ margin: 0, fontSize: '11.5px', color: '#64748b' }}>
+                        Pembayaran via {selectedOrderDetail.paymentMethod || 'QRIS Instant BCA'} telah disahkan dan dana disimpan di rekening escrow Vault.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="od-modal-actions">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="od-btn-print"
+                    title="Cetak Faktur / Simpan sebagai PDF A4"
+                  >
+                    🖨️ Cetak Invoice Resmi (PDF / A4)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedOrderDetail(null)}
+                    className="od-btn-close"
+                  >
+                    Tutup Rincian
+                  </button>
                 </div>
               </div>
-            </div>
 
-            {/* Tracking Number Section */}
-            <div
-              style={{
-                background: 'rgba(0, 223, 162, 0.05)',
-                border: '1px solid rgba(0, 223, 162, 0.2)',
-                borderRadius: '12px',
-                padding: '14px 16px',
-                marginBottom: '18px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '10px',
-              }}
-            >
-              <div>
-                <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '700' }}>
-                  Nomor Resi Pengiriman ({selectedOrderDetail.courier || 'Ekspedisi Rekanan'})
+              {/* =========================================================
+                  DEDICATED OFFICIAL INVOICE DOKUMEN CETAK (PRINT ONLY A4)
+                  ========================================================= */}
+              <div className="official-invoice-print-doc print-only">
+                {/* Header Invoice Perusahaan */}
+                <div className="print-invoice-header">
+                  <div>
+                    <h1 className="print-logo-brand">ZED CONSIGN</h1>
+                    <div className="print-sub-brand">
+                      <strong>PT ZEDCONSIGN LUXURY INDONESIA &bull; SNEAKER VAULT AUTHENTICATION</strong><br />
+                      Gedung Sentra Konsinyasi Nasional, Senayan, Jakarta &bull; Kampus UNDIP Tembalang<br />
+                      Layanan Resmi: support@zedconsign.id &bull; Hotline: +62 812-3456-7890 &bull; www.zedconsign.id
+                    </div>
+                  </div>
+                  <div className="print-invoice-title-block">
+                    <h2 className="print-invoice-title">FAKTUR INVOICE RESMI</h2>
+                    <div className="print-invoice-number">NO: {selectedOrderDetail.id}</div>
+                    <div style={{ fontSize: '9pt', color: '#475569', marginTop: '2px' }}>
+                      Tanggal: {orderDate}
+                    </div>
+                    <div className="print-badge-paid">✓ LUNAS &bull; VERIFIED ESCROW</div>
+                  </div>
                 </div>
-                <div style={{ fontSize: '16px', fontWeight: '900', color: '#ffffff', letterSpacing: '1px', marginTop: '2px' }}>
-                  {selectedOrderDetail.trackingNumber || 'Menunggu terbit resi Vault'}
+
+                {/* Data Pembeli & Transaksi 2 Kolom */}
+                <div className="print-parties-grid">
+                  <div className="print-party-col">
+                    <h4>Ditujukan Kepada (Penerima):</h4>
+                    <p><strong>Nama:</strong> {selectedOrderDetail.buyerName || 'Pelanggan Terhormat'}</p>
+                    <p><strong>Kontak / HP:</strong> {selectedOrderDetail.buyerPhone || '-'}</p>
+                    <p><strong>Alamat Pengiriman:</strong> {selectedOrderDetail.shippingAddress || '-'}</p>
+                    <p><strong>Jasa Ekspedisi:</strong> {selectedOrderDetail.courier || 'Ekspedisi Rekanan ZedConsign'}</p>
+                  </div>
+                  <div className="print-party-col">
+                    <h4>Detail Transaksi &amp; Vault:</h4>
+                    <p><strong>Nomor Invoice:</strong> {selectedOrderDetail.id}</p>
+                    <p><strong>Metode Pembayaran:</strong> {selectedOrderDetail.paymentMethod || 'QRIS Instant BCA'}</p>
+                    <p><strong>Nomor Resi Vault:</strong> <strong>{selectedOrderDetail.trackingNumber || 'Dalam Proses Packing Vault'}</strong></p>
+                    <p><strong>Security Tag RFID:</strong> {selectedOrderDetail.vaultVerificationTag || 'ZC-AUTH-VAULT'}</p>
+                  </div>
+                </div>
+
+                {/* Tabel Rincian Produk */}
+                <table className="print-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '5%', textAlign: 'center' }}>No</th>
+                      <th style={{ width: '45%' }}>Deskripsi Produk &amp; Sepatu</th>
+                      <th style={{ width: '15%' }}>Ukuran</th>
+                      <th style={{ width: '15%' }}>Kondisi</th>
+                      <th style={{ width: '20%', textAlign: 'right' }}>Harga Satuan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={{ textAlign: 'center', fontWeight: 'bold' }}>1</td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {selectedOrderDetail.shoeImage && (
+                            <img
+                              src={selectedOrderDetail.shoeImage}
+                              alt=""
+                              style={{ width: '38px', height: '38px', objectFit: 'contain', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                            />
+                          )}
+                          <div>
+                            <strong>{selectedOrderDetail.shoeBrand}</strong> - {selectedOrderDetail.shoeName}
+                            <div style={{ fontSize: '8pt', color: '#64748b' }}>Autentikasi: Lolos Verifikasi Fisik 12 Titik Kurator Vault</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td><strong>{selectedOrderDetail.size}</strong></td>
+                      <td>{selectedOrderDetail.condition}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{formatRupiah(selectedOrderDetail.price)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* Ringkasan Biaya & Stempel Keaslian */}
+                <div className="print-bottom-grid">
+                  <div className="print-vault-stamp-box">
+                    <div className="print-stamp-title">
+                      🛡️ ZEDCONSIGN 100% AUTHENTIC GUARANTEED
+                    </div>
+                    <div className="print-stamp-text">
+                      Sepatu ini telah melalui uji kurasi fisik resmi oleh Tim Kurator ZedConsign Vault (pemeriksaan box, barcode label, stitching jahitan, insole, out-sole, dan material UV).
+                    </div>
+                    <div style={{ fontSize: '8pt', color: '#166534', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>RFID ID: <strong>{selectedOrderDetail.vaultVerificationTag}</strong></span>
+                      <span>Chief Curator: <strong>Shiddiq Yazid (Vault ID: 041)</strong></span>
+                    </div>
+                    {selectedOrderDetail.paymentProof && (
+                      <div style={{ marginTop: '4px', fontSize: '7.5pt', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>Bukti Bayar: Terlampir &bull; Sah diverifikasi sistem kasir digital.</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="print-ledger-box">
+                    <div className="print-ledger-row">
+                      <span>Subtotal Produk:</span>
+                      <span>{formatRupiah(selectedOrderDetail.price)}</span>
+                    </div>
+                    <div className="print-ledger-row">
+                      <span>Ongkos Kirim ({selectedOrderDetail.courier?.split(' ')[0] || 'Ekspedisi'}):</span>
+                      <span>{formatRupiah(selectedOrderDetail.shippingCost || 0)}</span>
+                    </div>
+                    <div className="print-ledger-row">
+                      <span>Biaya Autentikasi Vault:</span>
+                      <span style={{ color: '#059669', fontWeight: 'bold' }}>GRATIS (Rp 0)</span>
+                    </div>
+                    <div className="print-ledger-row">
+                      <span>Asuransi Kehilangan:</span>
+                      <span style={{ color: '#059669', fontWeight: 'bold' }}>Ditanggung ZedConsign</span>
+                    </div>
+                    <div className="print-ledger-total-row">
+                      <span>TOTAL LUNAS:</span>
+                      <span>{formatRupiah(totalAmount)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Catatan Kaki & Tanda Tangan */}
+                <div className="print-footer-disclaimer">
+                  <div style={{ maxWidth: '65%' }}>
+                    <strong>Ketentuan Transaksi &amp; Garansi Autentikasi:</strong><br />
+                    1. Faktur ini sah diterbitkan secara elektronik oleh sistem ZedConsign PWA tanpa memerlukan tanda tangan basah.<br />
+                    2. Garansi uang kembali 100% jika unit terbukti tidak autentik oleh kurator independen terakreditasi.<br />
+                    3. Simpan faktur ini dan sertifikat Vault Passport untuk klaim layanan atau titip jual kembali (resell) di masa mendatang.
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '8pt', color: '#64748b' }}>Dicetak pada:</div>
+                    <div style={{ fontSize: '8.5pt', fontWeight: 'bold', color: '#0f172a' }}>
+                      {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}, {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                    </div>
+                    <div style={{ marginTop: '4px', fontSize: '8pt', fontWeight: '800', color: '#006b52' }}>
+                      [ SYSTEM VERIFIED &bull; ZEDCONSIGN VAULT ]
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              {selectedOrderDetail.trackingNumber && (
-                <button
-                  type="button"
-                  onClick={() => handleCopyResi(selectedOrderDetail.trackingNumber)}
-                  style={{
-                    background: 'var(--accent)',
-                    color: '#000000',
-                    border: 'none',
-                    padding: '7px 16px',
-                    borderRadius: '8px',
-                    fontWeight: '800',
-                    fontSize: '12px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Salin Resi
-                </button>
-              )}
-            </div>
-
-            {/* Authenticity Vault Certificate Badge */}
-            <div
-              style={{
-                background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.8) 100%)',
-                border: '1px solid rgba(0, 223, 162, 0.3)',
-                borderRadius: '12px',
-                padding: '14px 16px',
-                marginBottom: '18px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '14px',
-              }}
-            >
-              <div
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  background: 'rgba(0, 223, 162, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '20px',
-                  color: 'var(--accent)',
-                  flexShrink: 0,
-                }}
-              >
-                🛡️
-              </div>
-              <div style={{ flex: 1 }}>
-                <strong style={{ fontSize: '13px', color: '#ffffff', display: 'block' }}>
-                  ZedConsign 100% Authentic Guaranteed
-                </strong>
-                <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-                  Tag RFID/NFC Vault: <strong>{selectedOrderDetail.vaultVerificationTag}</strong> &bull; Diverifikasi oleh {selectedOrderDetail.verifiedBy || 'Tim Kurator Vault'}.
-                </span>
-              </div>
-            </div>
-
-            {/* Shipping & Payment Info Summary */}
-            <div
-              style={{
-                background: 'var(--bg-card)',
-                borderRadius: '12px',
-                border: '1px solid var(--border-color)',
-                padding: '16px',
-                fontSize: '13px',
-                lineHeight: '1.7',
-                marginBottom: '20px',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-dim)' }}>Penerima:</span>
-                <strong>{selectedOrderDetail.buyerName} ({selectedOrderDetail.buyerPhone})</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-dim)' }}>Alamat:</span>
-                <span style={{ textAlign: 'right', maxWidth: '300px' }}>{selectedOrderDetail.shippingAddress}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '8px', marginTop: '8px' }}>
-                <span style={{ color: 'var(--text-dim)' }}>Harga Sepatu:</span>
-                <strong>{formatRupiah(selectedOrderDetail.price)}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-dim)' }}>Ongkos Kirim:</span>
-                <strong>{formatRupiah(selectedOrderDetail.shippingCost)}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-dim)' }}>Metode Bayar:</span>
-                <span>{selectedOrderDetail.paymentMethod}</span>
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  borderTop: '2px dashed var(--border-color)',
-                  paddingTop: '8px',
-                  marginTop: '8px',
-                  fontSize: '15px',
-                  fontWeight: '900',
-                  color: 'var(--accent)',
-                }}
-              >
-                <span>Total Lunas:</span>
-                <span>{formatRupiah(selectedOrderDetail.price + selectedOrderDetail.shippingCost)}</span>
-              </div>
-            </div>
-
-            {/* Lampiran Foto Bukti Transfer */}
-            {selectedOrderDetail.paymentProof && (
-              <div
-                style={{
-                  background: 'rgba(0, 223, 162, 0.05)',
-                  border: '1px solid rgba(0, 223, 162, 0.25)',
-                  borderRadius: '12px',
-                  padding: '14px',
-                  marginBottom: '20px',
-                  textAlign: 'center',
-                }}
-              >
-                <div style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: '800', textTransform: 'uppercase', marginBottom: '8px' }}>
-                  📷 Foto Bukti Pembayaran Terlampir
-                </div>
-                <img
-                  src={selectedOrderDetail.paymentProof}
-                  alt="Bukti Transfer"
-                  style={{
-                    maxHeight: '160px',
-                    maxWidth: '100%',
-                    objectFit: 'contain',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  window.print()
-                }}
-                className="btn-secondary"
-                style={{ flex: 1, padding: '10px' }}
-              >
-                🖨️ Cetak Invoice
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedOrderDetail(null)}
-                className="btn-primary"
-                style={{ flex: 1, padding: '10px' }}
-              >
-                Tutup Rincian
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* QUICK DISPATCH MODAL IN ORDERS PAGE */}
       {quickDispatchOrder && (
