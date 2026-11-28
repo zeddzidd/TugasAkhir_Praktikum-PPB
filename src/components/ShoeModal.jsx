@@ -296,56 +296,14 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose, showCheckoutModal, showSizeChart, shoePhotos.length])
 
-  // Computed size items derived specifically from uploaded shoe data (1 pc / uploaded size)
+  // Computed size items: persis 1 unit / 1 pasang (1 pc) sesuai objek sepatu yang diunggah
   const sizeItems = useMemo(() => {
     if (!shoe) return []
 
-    // 1. Jika data sepatu memiliki array sizes khusus
-    if (Array.isArray(shoe.sizes) && shoe.sizes.length > 0) {
-      return shoe.sizes.map((item, idx) => {
-        const szStr = typeof item === 'string' ? item : item.size || item.us || item.label || 'US 9'
-        const szPrice = typeof item === 'object' && item.price ? Number(item.price) : Number(shoe.price) || 0
-        const szStock = typeof item === 'object' && item.stock !== undefined ? Number(item.stock) : (Number(shoe.stock) || 1)
-        return {
-          id: idx,
-          label: szStr,
-          us: szStr,
-          eu: szStr,
-          uk: szStr,
-          price: szPrice,
-          strikePrice: Math.round(szPrice * 1.15),
-          stock: szStock,
-          express: Boolean(shoe.isExpress),
-          bestPrice: true,
-        }
-      })
-    }
-
-    // 2. Gunakan data ukuran asli yang diupload (shoe.size)
     const shoeSize = shoe.size ? shoe.size.trim() : 'US 9 / EU 42.5'
     const shoePrice = Number(shoe.price) || 0
     const shoeStock = Number(shoe.stock) > 0 ? Number(shoe.stock) : 1
 
-    // Jika shoe.size berisi koma (misal user menulis: "US 9, US 10")
-    if (shoeSize.includes(',')) {
-      return shoeSize.split(',').map((s, idx) => {
-        const trimmed = s.trim()
-        return {
-          id: idx,
-          label: trimmed,
-          us: trimmed,
-          eu: trimmed,
-          uk: trimmed,
-          price: shoePrice,
-          strikePrice: Math.round(shoePrice * 1.15),
-          stock: shoeStock,
-          express: Boolean(shoe.isExpress),
-          bestPrice: true,
-        }
-      })
-    }
-
-    // Tepat 1 PC / 1 Pasang sesuai data upload
     return [
       {
         id: 0,
@@ -1010,7 +968,7 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
                     <div style={{ flex: 1 }}>
                       <h4 className="ka-checkout-name">{shoe.name}</h4>
                       <p className="ka-checkout-size">
-                        Ukuran Terpilih: <strong>{getSizeLabel(selectedSize)}</strong> (EU {selectedSize.eu} / {selectedSize.cm} cm)
+                        Ukuran Terpilih: <strong>{getSizeLabel(selectedSize)}</strong>{selectedSize.cm ? ` (${selectedSize.cm} cm)` : ''}
                       </p>
                       <p className="ka-checkout-condition">Kondisi: {shoe.condition}</p>
                       <span className="ka-verified-badge-mini">100% Authentic Verified</span>
