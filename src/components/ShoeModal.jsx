@@ -143,8 +143,41 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
     if (!file) return
     const reader = new FileReader()
     reader.onload = (event) => {
-      setPaymentProofImage(event.target.result)
-      setPaymentProofError('')
+      const rawDataUrl = event.target.result
+      // Kompres otomatis gambar struk/kamera HP via canvas agar ukuran ringan (< 80KB) dan tidak melampaui kuota HP
+      const img = new Image()
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+          const maxDim = 800
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width)
+              width = maxDim
+            } else {
+              width = Math.round((width * maxDim) / height)
+              height = maxDim
+            }
+          }
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0, width, height)
+          const compressed = canvas.toDataURL('image/jpeg', 0.72)
+          setPaymentProofImage(compressed)
+          setPaymentProofError('')
+        } catch {
+          setPaymentProofImage(rawDataUrl)
+          setPaymentProofError('')
+        }
+      }
+      img.onerror = () => {
+        setPaymentProofImage(rawDataUrl)
+        setPaymentProofError('')
+      }
+      img.src = rawDataUrl
     }
     reader.readAsDataURL(file)
   }
@@ -190,7 +223,7 @@ function ShoeModal({ shoe, onClose, onNavigateConsign, currentUser, onOpenAuth }
         verifiedBy: 'Chief Authenticator ZedConsign Vault',
         paymentProof: paymentProofImage,
       }
-      saveOrder(newOrderRecord)
+      saveOrder(newOrderRecord, currentUser)
     } catch (e) {
       console.warn('Gagal mencatat pesanan:', e)
     }

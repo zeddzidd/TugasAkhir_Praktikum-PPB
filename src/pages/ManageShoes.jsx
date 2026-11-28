@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { formatRupiah, CATEGORIES } from '../data/shoes.js'
 import ImageUploader from '../components/ImageUploader.jsx'
 import { isAdminUser } from '../lib/supabase.js'
-import { getAllOrders, updateOrder } from '../lib/orders.js'
+import { getAllOrders, updateOrder, fetchOrdersFromSupabase } from '../lib/orders.js'
 
 const PRESET_IMAGES = [
   { label: 'Air Max Goadome Foam', value: '/shoes/goadome-foam.svg' },
@@ -83,6 +83,21 @@ function ManageShoes({
       window.removeEventListener('storage', handleReloadOrders)
     }
   }, [])
+
+  // Auto-sync all orders from Supabase cloud on load & user change (cross-device sync)
+  useEffect(() => {
+    async function syncOrdersCloud() {
+      try {
+        const cloudOrders = await fetchOrdersFromSupabase(currentUser)
+        if (Array.isArray(cloudOrders)) {
+          setOrders(cloudOrders)
+        }
+      } catch (e) {
+        console.warn('Admin orders sync error:', e)
+      }
+    }
+    syncOrdersCloud()
+  }, [currentUser])
 
   // Order Metrics
   const pendingOrders = useMemo(

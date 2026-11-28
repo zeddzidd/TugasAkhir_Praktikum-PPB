@@ -10,6 +10,7 @@ import ConsignInfo from './pages/ConsignInfo.jsx'
 import Orders from './pages/Orders.jsx'
 import Profile from './pages/Profile.jsx'
 import { DEFAULT_SHOES } from './data/shoes.js'
+import { fetchOrdersFromSupabase } from './lib/orders.js'
 import {
   getCurrentSession,
   fetchShoesFromSupabase,
@@ -55,6 +56,9 @@ function App() {
       const sess = await getCurrentSession()
       if (sess?.user) {
         setCurrentUser(sess.user)
+        try {
+          await fetchOrdersFromSupabase(sess.user)
+        } catch {}
       }
     }
     checkAuth()

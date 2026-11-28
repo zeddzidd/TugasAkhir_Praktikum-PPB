@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { formatRupiah } from '../data/shoes.js'
 import { isAdminUser } from '../lib/supabase.js'
-import { getAllOrders, updateOrder } from '../lib/orders.js'
+import { getAllOrders, updateOrder, fetchOrdersFromSupabase } from '../lib/orders.js'
 
 function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
   const isAdmin = isAdminUser(currentUser)
@@ -16,6 +16,7 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
   const [quickResi, setQuickResi] = useState('')
   const [quickCourier, setQuickCourier] = useState('JNE Express x ZedConsign')
   const [ordersToast, setOrdersToast] = useState('')
+  const [isSyncing, setIsSyncing] = useState(false)
 
   // Sync orders dynamically on window events
   useEffect(() => {
@@ -29,6 +30,41 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
       window.removeEventListener('storage', handleReload)
     }
   }, [])
+
+  // Auto-sync orders with Supabase cloud (pull orders from laptop to HP or vice versa)
+  useEffect(() => {
+    async function syncCloud() {
+      setIsSyncing(true)
+      try {
+        const cloudList = await fetchOrdersFromSupabase(currentUser)
+        if (Array.isArray(cloudList)) {
+          setOrders(cloudList)
+        }
+      } catch (err) {
+        console.warn('Sync orders warning:', err)
+      } finally {
+        setIsSyncing(false)
+      }
+    }
+    syncCloud()
+  }, [currentUser])
+
+  const handleManualSync = async () => {
+    setIsSyncing(true)
+    try {
+      const cloudList = await fetchOrdersFromSupabase(currentUser)
+      if (Array.isArray(cloudList)) {
+        setOrders(cloudList)
+        setOrdersToast('✓ Pesanan berhasil disinkronkan dari Cloud!')
+        setTimeout(() => setOrdersToast(''), 3000)
+      }
+    } catch {
+      setOrdersToast('Gagal sinkronisasi cloud.')
+      setTimeout(() => setOrdersToast(''), 3000)
+    } finally {
+      setIsSyncing(false)
+    }
+  }
 
   // Filter pesanan hanya milik user yang sedang login
   const myOrders = useMemo(() => {
@@ -482,16 +518,40 @@ function Orders({ onNavigateCatalog, currentUser, onOpenAuth }) {
           })}
         </div>
 
-        {/* Search Input */}
-        <div style={{ minWidth: '260px' }}>
+        {/* Search Input & Cloud Sync Button */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', minWidth: '260px' }}>
           <input
             type="text"
             className="search-input"
             placeholder="Cari nama sepatu, ID, resi, pembeli..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ margin: 0, width: '100%' }}
+            style={{ margin: 0, flex: 1 }}
           />
+          <button
+            type="button"
+            onClick={handleManualSync}
+            disabled={isSyncing}
+            title="Sinkronkan Pesanan dari Cloud (Laptop / HP)"
+            style={{
+              padding: '8px 12px',
+              borderRadius: '9px',
+              border: '1px solid var(--border-color)',
+              background: isSyncing ? '#f1f5f9' : 'var(--bg-card)',
+              color: 'var(--text-main)',
+              fontSize: '12px',
+              fontWeight: '700',
+              cursor: isSyncing ? 'not-allowed' : 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+            }}
+          >
+            <span>{isSyncing ? '🔄' : '☁️'}</span>
+            <span className="hide-on-mobile">{isSyncing ? 'Sinkron...' : 'Sinkronkan'}</span>
+          </button>
         </div>
       </div>
 
